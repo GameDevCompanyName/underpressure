@@ -1,0 +1,49 @@
+import { WorldCell, Map, generateFilledMap, applyRuleToAllButEdges } from "./common";
+
+export function createRandomFiller(p: number): () => WorldCell {
+    return () => Math.random() > p ? WorldCell.EMPTY : WorldCell.WALL;
+}
+
+// принимает массив 3х3 - в центре целевая клетка, вокруг соседи
+export function countNeighbours(array: WorldCell[][]): number {
+    let count = 0;
+    for (let y = 0; y <= 2; y++) {
+        for (let x = 0; x <= 2; x++) {
+            if (x === 1 && y === 1) {
+                continue;
+            }
+            if (array[x][y] === WorldCell.WALL) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+export function createSmoothingRule(neighbourCount: number): (array: Map) => WorldCell {
+    return (array: Map) => {
+        if (countNeighbours(array) >= neighbourCount) {
+            return WorldCell.WALL;
+        } else {
+            return WorldCell.EMPTY;
+        }
+    };
+}
+
+export function generateWithNoiseCaves(
+    height: number,
+    width: number,
+    initialFill: () => WorldCell,
+    automataRule: (neighbours: Map) => WorldCell,
+    automataGenerations: number
+): Map {
+
+    let map: Map = generateFilledMap(height, width);
+    map = applyRuleToAllButEdges(map, initialFill);
+
+    for (let i = 0; i < automataGenerations; i++) {
+        map = applyRuleToAllButEdges(map, (point, neigh) => automataRule(neigh));
+    }
+
+    return map;
+}

@@ -1,0 +1,5 @@
+export const WORLD_PADDING = 10;
+
+// PATH GENERATION
+export const AVERAGE_NODE_DISTANCE = 30;
+export const AVERAGE_NODE_DIAMETER = 8;
