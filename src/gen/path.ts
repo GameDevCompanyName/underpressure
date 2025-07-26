@@ -1,6 +1,6 @@
 import { applyRuleToAllButEdges, applyRuleToCoords, Map, World, WorldCell } from "./common";
-import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, WORLD_PADDING } from "./const";
-import { distance } from "./util";
+import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, MAX_EDGE_AMP, MAX_EDGE_FREQ, MAX_EDGE_WIDTH, MIN_EDGE_AMP, MIN_EDGE_FREQ, MIN_EDGE_WIDTH, PATH_WIDTH_DEVIATION, WORLD_PADDING } from "./const";
+import { distance, randomInRange } from "./util";
 
 export interface PathNode {
     coords: Point;
@@ -55,9 +55,9 @@ export function generatePathInfo(map: Map): WorldPathInfo {
             const edge: PathEdge = {
                 start: prevNode!!,
                 end: currentNode,
-                widthModifier: 2 + Math.random() * 4,
-                freqModifier: Math.random() / 2,
-                amplModifier: 2 + Math.random() * 3
+                widthModifier: randomInRange(MIN_EDGE_WIDTH, MAX_EDGE_WIDTH),
+                freqModifier: randomInRange(MIN_EDGE_FREQ, MAX_EDGE_FREQ),
+                amplModifier: randomInRange(MIN_EDGE_AMP, MAX_EDGE_AMP)
             }
             edges.push(edge);
         }
@@ -76,7 +76,9 @@ export function clearNodeCells(map: Map, info: WorldPathInfo): Map {
     return applyRuleToAllButEdges(map, (point, neigh) => {
         for (let i = 0; i < nodes.length; i++) {
             const currentNode = nodes[i];
-            if (distance(currentNode.coords, point) < currentNode.diameter) {
+            const dist = distance(currentNode.coords, point);
+            const deviatedDist = deviateNumber(dist, PATH_WIDTH_DEVIATION);
+            if (deviatedDist < currentNode.diameter) {
                 return WorldCell.EMPTY;
             }
         }
@@ -94,12 +96,8 @@ export function clearEdgesCells(map: Map, info: WorldPathInfo): Map {
 }
 
 export function clearSingleEdgeCells(map: Map, edge: PathEdge): Map {
-    return applyRuleToCoords(
+    return applyRuleToAllButEdges(
         map,
-        edge.start.coords.x,
-        edge.end.coords.x,
-        1,
-        map.length - 1,
         (point, neigh) => checkEdgeRuleForCell(point, edge, map[point.y][point.x])
     );
 }
@@ -111,7 +109,7 @@ export function checkEdgeRuleForCell(point: Point, edge: PathEdge, initial: Worl
     const dx = end.coords.x - start.coords.x;
     const dy = end.coords.y - start.coords.y;
     const length = Math.hypot(dx, dy);
-    if (length === 0) return WorldCell.WALL; // Защита от деления на 0
+    if (length === 0) return initial; // Защита от деления на 0
 
     // Нормализованный вектор направления
     const dirX = dx / length;
@@ -124,6 +122,10 @@ export function checkEdgeRuleForCell(point: Point, edge: PathEdge, initial: Worl
     // Скалярное проецирование точки на отрезок — это и будет pseudoX
     const dot = px * dirX + py * dirY;
     const pseudoX = dot;
+
+    if (pseudoX < 0 || pseudoX > length) {
+        return initial;
+    }
 
     // Ближайшая точка (cross) на отрезке
     const crossX = start.coords.x + dirX * dot;
@@ -142,9 +144,17 @@ export function checkEdgeRuleForCell(point: Point, edge: PathEdge, initial: Worl
     const pseudoY = Math.sin(pseudoX * freqModifier) * amplModifier;
 
     // Применяем правило
-    if (Math.abs(distance - pseudoY) < widthModifier) {
+    const deviatedDistance = deviateNumber(Math.abs(distance - pseudoY), PATH_WIDTH_DEVIATION);
+    if (deviatedDistance < widthModifier) {
         return WorldCell.EMPTY;
     } else {
         return initial;
     }
+}
+
+export function deviateNumber(
+    factual: number,
+    deviationModifier: number
+): number {
+    return factual * (1 - deviationModifier) + Math.random() * factual * deviationModifier * 2;
 }

@@ -13,3 +13,7 @@ export function deepCopyArray<T>(array: T[][]): T[][] {
     }
     return newArray;
 }
+
+export function randomInRange(from: number, to: number): number {
+    return from + Math.random() * (to - from);
+}

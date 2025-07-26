@@ -32,18 +32,22 @@ export function createSmoothingRule(neighbourCount: number): (array: Map) => Wor
 
 export function generateWithNoiseCaves(
     height: number,
-    width: number,
-    initialFill: () => WorldCell,
-    automataRule: (neighbours: Map) => WorldCell,
-    automataGenerations: number
+    width: number
 ): Map {
-
     let map: Map = generateFilledMap(height, width);
-    map = applyRuleToAllButEdges(map, initialFill);
 
-    for (let i = 0; i < automataGenerations; i++) {
-        map = applyRuleToAllButEdges(map, (point, neigh) => automataRule(neigh));
-    }
+    map = applyRuleToAllButEdges(map, createRandomFiller(0.39));
+    map = smoothIterations(map, 4, 2);
 
     return map;
 }
+
+export function smoothIterations(map: Map, neighbours: number, iterations: number): Map {
+    let newMap = map;
+    const smoothingRule = createSmoothingRule(neighbours);
+    for (let i = 0; i < iterations; i++) {
+        newMap = applyRuleToAllButEdges(newMap, (point, neigh) => smoothingRule(neigh));
+    }
+    return newMap;
+}
+

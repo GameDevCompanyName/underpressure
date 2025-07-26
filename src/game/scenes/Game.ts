@@ -22,8 +22,8 @@ export class Game extends Scene {
     private readonly FUEL_CONSUMPTION_BASE = 10; // единиц в секунду
 
     // Определяем масштаб в зависимости от скорости
-    private readonly MIN_ZOOM = 1.5;    // При низкой скорости
-    private readonly MAX_ZOOM = 0.8;    // При высокой скорости
+    private readonly MIN_ZOOM = 0.2;    // При низкой скорости
+    private readonly MAX_ZOOM = 0.2;    // При высокой скорости
     private readonly MAX_SPEED = 600;   // Ожидаемая максимальная скорость (подбери под свою игру)
     private fuel: number;
 

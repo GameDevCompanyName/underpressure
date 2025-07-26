@@ -1,4 +1,4 @@
-import { createRandomFiller, createSmoothingRule, generateWithNoiseCaves } from "./caves";
+import { createRandomFiller, createSmoothingRule, generateWithNoiseCaves, smoothIterations } from "./caves";
 import { clearEdgesCells, clearNodeCells, generatePathInfo } from "./path";
 import { deepCopyArray } from "./util";
 
@@ -24,17 +24,9 @@ export interface Point {
 
 export function generateWorld(): World {
     const height: number = 200;
-    const width: number = 400;
+    const width: number = 300;
 
     // let map = generateFilledMap(height, width);
-
-    let map = generateWithNoiseCaves(
-        height,
-        width,
-        createRandomFiller(0.38),
-        createSmoothingRule(4),
-        9
-    );
 
     // map = clearSinPath(
     //     map,
@@ -47,9 +39,14 @@ export function generateWorld(): World {
     //     0.5
     // );
 
+    let map = generateWithNoiseCaves(
+        height,
+        width
+    );
     const pathInfo = generatePathInfo(map);
     map = clearNodeCells(map, pathInfo);
     map = clearEdgesCells(map, pathInfo);
+    map = smoothIterations(map, 4, 6);
 
     return {
         height,
