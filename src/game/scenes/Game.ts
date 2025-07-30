@@ -1,30 +1,33 @@
 import { Scene } from 'phaser';
 import { generateWorld, World, WorldCell } from '../../gen/common';
+import { PathNode } from '../../gen/path';
 
 export class Game extends Scene {
     raycasterPlugin: PhaserRaycaster;
 
-    // Переменные уровня
     private tileSize = 10;
     private playerSizeTiles = 3.5;
-    private wallColor = 0x8b4513; // SaddleBrown
+    private wallColor = 0x8b4513;
+
     private wallGroup: Phaser.Physics.Arcade.StaticGroup;
     private world: World;
 
     private cursors: Partial<Phaser.Types.Input.Keyboard.CursorKeys>;
-
     private player: Phaser.GameObjects.Rectangle;
     private speedText: Phaser.GameObjects.Text;
     private fuelBarBackground: Phaser.GameObjects.Rectangle;
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
 
     private readonly FUEL_MAX = 100;
-    private readonly FUEL_CONSUMPTION_BASE = 10; // единиц в секунду
+    private readonly FUEL_CONSUMPTION_BASE = 10;
+    private readonly REFUEL_RATE = 0.2;
 
-    // Определяем масштаб в зависимости от скорости
-    private readonly MIN_ZOOM = 0.2;    // При низкой скорости
-    private readonly MAX_ZOOM = 0.2;    // При высокой скорости
-    private readonly MAX_SPEED = 600;   // Ожидаемая максимальная скорость (подбери под свою игру)
+    private isRefueling = false;
+
+    private readonly MIN_ZOOM = 0.9;
+    private readonly MAX_ZOOM = 1.1;
+    private readonly MAX_SPEED = 600;
+
     private fuel: number;
 
     constructor() {
@@ -35,16 +38,46 @@ export class Game extends Scene {
         this.world = generateWorld();
         this.fuel = this.FUEL_MAX;
 
-        // 1. Устанавливаем жёлтый фон
+        this.createWalls();
+        this.createPlayer();
+        this.addStartPlatform();
+        this.addEndPlatform();
+        this.addRefuelPlatformsForIntermediateNodes();
+        this.setupCamera();
+        this.createUI();
+        this.setupControls();
+        this.setupWorldBounds();
+    }
+
+    update(time: number, delta: number) {
+        this.handlePlayerMovement(delta);
+        this.handleRefuel(delta);
+        this.updateFuelBar();
+        this.updateSpeedText();
+        this.updateCameraZoom();
+    }
+
+    private handleRefuel(delta: number) {
+        if (this.isRefueling) {
+            if (this.fuel < this.FUEL_MAX) {
+                this.fuel = Math.min(this.fuel + this.REFUEL_RATE * delta, this.FUEL_MAX);
+            }
+        }
+        this.isRefueling = false;
+    }
+
+    private setupCamera(): void {
         this.cameras.main.setBackgroundColor(0xffffaa);
+        this.cameras.main.startFollow(this.player);
+        this.scale.on('resize', this.handleResize, this);
+    }
 
-        // 3. Отрисовываем стенки как коричневые квадраты (Graphics)
-        // Проходим по карте, рисуем rect для каждой клетки == 1
+    private handleResize(gameSize: Phaser.Structs.Size): void {
+        const { width, height } = gameSize;
+        this.cameras.resize(width, height);
+    }
 
-        // Проходим по всей карте
-        // Добавляем группу или массив объектов стен с физикой
-        // Добавляем тела для столкновений
-        // Группа для хранения всех физических стен
+    private createWalls(): void {
         this.wallGroup = this.physics.add.staticGroup();
 
         for (let y = 0; y < this.world.height; y++) {
@@ -52,149 +85,207 @@ export class Game extends Scene {
                 if (this.world.map[y][x] === WorldCell.WALL) {
                     const posX = x * this.tileSize + this.tileSize / 2;
                     const posY = y * this.tileSize + this.tileSize / 2;
-
                     const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.wallColor);
-                    wall.setPipeline('Light2D');
                     this.wallGroup.add(wall);
                 }
             }
         }
+    }
 
-        // 5. Создаём игрока в нужной точке (красный квадрат)
-        // Добавляем физику
+    private addStartPlatform(): void {
+        const startNode = this.world.pathInfo.nodes[0];
+        this.addPlatformAtNode(startNode);
+    }
 
-        // Стартовая позиция игрока (например, в начале туннеля)
-        const startX = this.tileSize * 9 + this.tileSize / 2;
-        const startY = this.world.height * this.tileSize / 2;
+    private addEndPlatform(): void {
+        const endNode = this.world.pathInfo.nodes[this.world.pathInfo.nodes.length - 1];
+        this.addPlatformAtNode(endNode);
+    }
 
-        // Создаём визуальный объект — красный прямоугольник
-        this.player = this.add.rectangle(startX, startY, this.tileSize * this.playerSizeTiles, this.tileSize * this.playerSizeTiles, 0xff0000);
+    private addPlatformAtNode(node: PathNode): void {
+        const { x, y } = node.coords;
 
-        // Добавляем физику вручную
-        this.physics.add.existing(this.player);
+        const posX = x * this.tileSize;
+        const posY = y * this.tileSize + (this.tileSize * this.playerSizeTiles) / 2;
 
-        // Получаем доступ к телу
-        const body = this.player.body as Phaser.Physics.Arcade.Body;
+        const platform = this.add.rectangle(
+            posX,
+            posY + 5, // немного ниже центра игрока
+            this.tileSize * this.playerSizeTiles,
+            10,
+            0x888888
+        );
 
+        this.physics.add.existing(platform, true);
+        this.physics.add.collider(this.player, platform);
+    }
+
+    private addRefuelPlatformAtNode(node: PathNode): void {
+        const { x, y } = node.coords;
+
+        const posX = x * this.tileSize;
+        const posY = y * this.tileSize + (this.tileSize * this.playerSizeTiles) / 2;
+
+        const platform = this.add.rectangle(
+            posX,
+            posY + 5,
+            this.tileSize * this.playerSizeTiles,
+            10,
+            0x00ff00 // зелёная платформа для заправки
+        );
+
+        this.physics.add.existing(platform, true);
+        this.physics.add.collider(this.player, platform, () => {
+            if (!this.isRefueling) {
+                this.isRefueling = true;
+            }
+        });
+    }
+
+    private addRefuelPlatformsForIntermediateNodes(): void {
+        const nodes = this.world.pathInfo.nodes;
+        for (let i = 1; i < nodes.length - 1; i++) {
+            this.addRefuelPlatformAtNode(nodes[i]);
+        }
+    }
+
+    private createPlayer(): void {
+        const startPosition = this.getPlayerStartPosition();
+        this.player = this.createPlayerRectangle(startPosition);
+        this.configurePlayerPhysics(this.player);
+        this.setupPlayerCollisions(this.player);
+    }
+
+    private getPlayerStartPosition(): Phaser.Math.Vector2 {
+        const startNode = this.world.pathInfo.nodes[0];
+        const { x, y } = startNode.coords;
+
+        return new Phaser.Math.Vector2(
+            x * this.tileSize,
+            y * this.tileSize
+        );
+    }
+
+    private createPlayerRectangle(position: Phaser.Math.Vector2): Phaser.GameObjects.Rectangle {
+        const player = this.add.rectangle(
+            position.x,
+            position.y,
+            this.tileSize * this.playerSizeTiles,
+            this.tileSize * this.playerSizeTiles,
+            0xff0000 // Можно заменить на this.playerColor если хочешь
+        );
+
+        this.physics.add.existing(player);
+        return player;
+    }
+
+    private configurePlayerPhysics(player: Phaser.GameObjects.Rectangle): void {
+        const body = player.body as Phaser.Physics.Arcade.Body;
         body.setCollideWorldBounds(true);
         body.setBounce(0);
-        body.setDrag(50); // необязательно: немного торможения
-        body.setMaxVelocity(this.MAX_SPEED); // ограничение скорости
-        body.setAllowGravity(true); //TODO
+        body.setDrag(50);
+        body.setMaxVelocity(this.MAX_SPEED);
+        body.setAllowGravity(true); // Если не нужен гравитационный эффект — выключи
+    }
 
-        // Настраиваем столкновение с группой стен
-        this.physics.add.collider(this.player, this.wallGroup, () => {
-            // При столкновении — перезапуск сцены
-            // this.scene.restart(); //TODO
+    private setupPlayerCollisions(player: Phaser.GameObjects.Rectangle): void {
+        this.physics.add.collider(player, this.wallGroup, () => {
+            // this.scene.restart(); // TODO: действие при столкновении со стеной
         });
+    }
 
-        // создаем текст для отображения скорости
+    private createUI(): void {
         this.speedText = this.add.text(0, 0, '', {
             fontSize: '16px',
             color: '#000000',
             backgroundColor: '#ffffff',
         });
-        this.speedText.setOrigin(0.5, 1); // центрируем по X, снизу по Y (чтобы текст был над объектом)
+        this.speedText.setOrigin(0.5, 1);
 
-        //fuelbar
-        const barWidth = this.tileSize * 1.5;
+        const barWidth = this.tileSize * this.playerSizeTiles * 1.5;
         const barHeight = 10;
 
         this.fuelBarBackground = this.add.rectangle(0, 0, barWidth, barHeight, 0x000000, 0.3);
         this.fuelBarForeground = this.add.rectangle(0, 0, barWidth, barHeight, 0x00ff00, 0.6);
 
-        // Центрируем по origin
         this.fuelBarBackground.setOrigin(0.5, 0);
         this.fuelBarForeground.setOrigin(0.5, 0);
+    }
 
-        // 6. Настраиваем камеру и границы мира
-        // Камера следует за игроком, мир ограничен размером карты
-
-        // 7. Настраиваем клавиши (W, A, D)
-
-        // Управление
+    private setupControls(): void {
         this.cursors = this.input.keyboard!.addKeys({
             left: Phaser.Input.Keyboard.KeyCodes.A,
             right: Phaser.Input.Keyboard.KeyCodes.D,
-            up: Phaser.Input.Keyboard.KeyCodes.W
+            up: Phaser.Input.Keyboard.KeyCodes.W,
         });
+    }
 
-        // Камера следует за кораблём
-        this.cameras.main.startFollow(this.player);
-        this.scale.on('resize', this.handleResize, this);
-
+    private setupWorldBounds(): void {
         const worldWidth = this.tileSize * this.world.width;
         const worldHeight = this.tileSize * this.world.height;
-
         this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     }
 
-    private handleResize(gameSize: Phaser.Structs.Size): void {
-        const width = gameSize.width;
-        const height = gameSize.height;
-
-        this.cameras.resize(width, height);
-    }
-
-    update(time: number, delta: number) {
+    private handlePlayerMovement(delta: number): void {
         const body = this.player.body as Phaser.Physics.Arcade.Body;
         const dt = delta / 1000;
 
-        // Сброс ускорения каждый кадр
         body.acceleration.set(0);
 
-        // Подсчёт направления, если есть топливо
-        if (this.fuel > 0) {
-            let dirX = 0;
-            let dirY = 0;
+        if (this.fuel <= 0) return;
 
-            // Обработка нажатий
-            if (this.cursors.left!.isDown) dirX -= 1;
-            if (this.cursors.right!.isDown) dirX += 1;
-            if (this.cursors.up!.isDown) dirY -= 1;
+        let dirX = 0;
+        let dirY = 0;
 
-            // Применяем ускорение
-            if (dirX !== 0) body.acceleration.x = dirX * 300;
-            if (dirY !== 0) body.acceleration.y = dirY * 800;
+        if (this.cursors.left?.isDown) dirX -= 1;
+        if (this.cursors.right?.isDown) dirX += 1;
+        if (this.cursors.up?.isDown) dirY -= 1;
 
-            // Если есть движение — считаем расход топлива
-            const directionCount = Math.abs(dirX) + Math.abs(dirY);
-            if (directionCount > 0) {
-                const fuelMultiplier = directionCount === 2 ? 1.5 : 1;
-                this.fuel -= this.FUEL_CONSUMPTION_BASE * fuelMultiplier * dt;
-                this.fuel = Math.max(this.fuel, 0); // Не уходим в минус
-            }
+        if (dirX !== 0) body.acceleration.x = dirX * 300;
+        if (dirY !== 0) body.acceleration.y = dirY * 800;
+
+        const directionCount = Math.abs(dirX) + Math.abs(dirY);
+        if (directionCount > 0) {
+            const multiplier = directionCount === 2 ? 1.5 : 1;
+            this.fuel -= this.FUEL_CONSUMPTION_BASE * multiplier * dt;
+            this.fuel = Math.max(this.fuel, 0);
         }
+    }
 
-        const barWidth = this.tileSize * 1.5;
+    private updateFuelBar(): void {
+        // Вычисляем ширину полосы пропорционально размеру игрока и масштабируем на 1.5
+        const barWidth = this.tileSize * this.playerSizeTiles * 1.5;
 
-        // Позиция под ракетой
+        // Координата центра игрока по X — это центр полосы, 
+        // а setPosition ставит левый верхний угол, поэтому смещаем влево на половину ширины
         const barX = this.player.x;
-        const barY = this.player.y + this.tileSize / 2 + 4; // чуть ниже ракеты
 
-        this.fuelBarBackground.setPosition(barX, barY);
+        // Позиция по Y под игроком — как было, чуть ниже
+        const barY = this.player.y + this.tileSize * this.playerSizeTiles;
 
-        // Расчёт ширины переднего бара (по топливу)
         const fuelRatio = Phaser.Math.Clamp(this.fuel / this.FUEL_MAX, 0, 1);
+
+        // Устанавливаем позицию полосы (левый верхний угол)
+        this.fuelBarBackground.setPosition(barX, barY);
         this.fuelBarForeground.setPosition(barX, barY);
+
+        // Устанавливаем ширину заливки в зависимости от процента топлива
         this.fuelBarForeground.width = barWidth * fuelRatio;
+    }
 
-        // Обновляем позицию текста скорости над игроком
-        this.speedText.setPosition(this.player.x, this.player.y - this.tileSize / 2 - 8);
-
-        // Показываем округлённую скорость
+    private updateSpeedText(): void {
+        const body = this.player.body as Phaser.Physics.Arcade.Body;
         const vx = body.velocity.x.toFixed(0);
         const vy = body.velocity.y.toFixed(0);
+        this.speedText.setPosition(this.player.x, this.player.y - this.tileSize / 2 - 8);
         this.speedText.setText(`vx: ${vx}\nvy: ${vy}`);
+    }
 
-        // Получаем скорость игрока
+    private updateCameraZoom(): void {
+        const body = this.player.body as Phaser.Physics.Arcade.Body;
         const velocityX = body.velocity.x;
-
-        // Интерполируем зум (плавное уменьшение масштаба при росте скорости)
         const t = Phaser.Math.Clamp(velocityX / this.MAX_SPEED, 0, 1);
         const zoom = Phaser.Math.Linear(this.MIN_ZOOM, this.MAX_ZOOM, t);
-
-        // Применяем масштаб
         this.cameras.main.setZoom(zoom);
     }
 }

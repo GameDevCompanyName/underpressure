@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "phaser": "^3.90.0",
+        "phaser-raycaster": "^0.10.11",
         "terser": "^5.39.0"
     }
 }

@@ -1,5 +1,5 @@
 import { createRandomFiller, createSmoothingRule, generateWithNoiseCaves, smoothIterations } from "./caves";
-import { clearEdgesCells, clearNodeCells, generatePathInfo } from "./path";
+import { clearEdgesCells, clearNodeCells, generatePathInfo, WorldPathInfo } from "./path";
 import { deepCopyArray } from "./util";
 
 export enum WorldCell {
@@ -15,6 +15,7 @@ export interface World {
     height: number;
     width: number;
     map: Map;
+    pathInfo: WorldPathInfo;
 }
 
 export interface Point {
@@ -23,7 +24,7 @@ export interface Point {
 }
 
 export function generateWorld(): World {
-    const height: number = 200;
+    const height: number = 130;
     const width: number = 300;
 
     // let map = generateFilledMap(height, width);
@@ -51,7 +52,8 @@ export function generateWorld(): World {
     return {
         height,
         width,
-        map
+        map,
+        pathInfo
     };
 }
 
