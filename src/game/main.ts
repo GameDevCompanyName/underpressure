@@ -24,6 +24,15 @@ const config: Phaser.Types.Core.GameConfig = {
             debug: false,         // можешь включить true для отладки
             gravity: { y: 500, x: 0 }     // мы задаём thrust-движение, поэтому гравитацию отключаем
         }
+    },
+    plugins: {
+        scene: [
+            {
+                key: 'PhaserRaycaster',
+                plugin: PhaserRaycaster,
+                mapping: 'raycasterPlugin'
+            }
+        ]
     }
 };
 

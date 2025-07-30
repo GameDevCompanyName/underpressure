@@ -3,11 +3,16 @@ import { generateWorld, World, WorldCell } from '../../gen/common';
 import { PathNode } from '../../gen/path';
 
 export class Game extends Scene {
-    raycasterPlugin: PhaserRaycaster;
+    private raycasterPlugin: PhaserRaycaster;
+    private raycaster: Raycaster;
+    private ray: Raycaster.Ray;
+    private intersections: Phaser.Geom.Point[];
+    private someGraphics: Phaser.GameObjects.Graphics;
 
     private tileSize = 10;
     private playerSizeTiles = 3.5;
     private wallColor = 0x8b4513;
+    private backgroundColor = 0x000000;
 
     private wallGroup: Phaser.Physics.Arcade.StaticGroup;
     private world: World;
@@ -18,14 +23,14 @@ export class Game extends Scene {
     private fuelBarBackground: Phaser.GameObjects.Rectangle;
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
 
-    private readonly FUEL_MAX = 100;
+    private readonly FUEL_MAX = 1000;
     private readonly FUEL_CONSUMPTION_BASE = 10;
     private readonly REFUEL_RATE = 0.2;
 
     private isRefueling = false;
 
-    private readonly MIN_ZOOM = 0.9;
-    private readonly MAX_ZOOM = 1.1;
+    private readonly MIN_ZOOM = 1.8;
+    private readonly MAX_ZOOM = 1.5;
     private readonly MAX_SPEED = 600;
 
     private fuel: number;
@@ -47,7 +52,22 @@ export class Game extends Scene {
         this.createUI();
         this.setupControls();
         this.setupWorldBounds();
+
+        this.raycaster = this.raycasterPlugin.createRaycaster();
+        this.ray = this.raycaster.createRay({
+            origin: {
+                x: 0,
+                y: 0
+            },
+            detectionRange: 500
+        });
+        this.raycaster.mapGameObjects(this.wallGroup.getChildren());
+        //cast ray in all directions
+        this.intersections = this.ray.castCircle();
+        this.someGraphics = this.add.graphics({ lineStyle: { width: 1, color: 0x00ff00 }, fillStyle: { color: 0xffffff, alpha: 0.3 } });
     }
+
+    private deltaSum = 0;
 
     update(time: number, delta: number) {
         this.handlePlayerMovement(delta);
@@ -55,6 +75,17 @@ export class Game extends Scene {
         this.updateFuelBar();
         this.updateSpeedText();
         this.updateCameraZoom();
+
+
+        if (this.deltaSum > 150) {
+            this.ray.setOrigin(this.player.x, this.player.y);
+            this.intersections = this.ray.castCircle();
+            this.redrawLight();
+            this.deltaSum = 0;
+        } else {
+            this.deltaSum += delta;
+        }
+
     }
 
     private handleRefuel(delta: number) {
@@ -67,7 +98,7 @@ export class Game extends Scene {
     }
 
     private setupCamera(): void {
-        this.cameras.main.setBackgroundColor(0xffffaa);
+        this.cameras.main.setBackgroundColor(this.backgroundColor);
         this.cameras.main.startFollow(this.player);
         this.scale.on('resize', this.handleResize, this);
     }
@@ -287,5 +318,27 @@ export class Game extends Scene {
         const t = Phaser.Math.Clamp(velocityX / this.MAX_SPEED, 0, 1);
         const zoom = Phaser.Math.Linear(this.MIN_ZOOM, this.MAX_ZOOM, t);
         this.cameras.main.setZoom(zoom);
+    }
+
+    private redrawLight() {
+        this.someGraphics.clear();
+        this.someGraphics.fillStyle(0xffffff, 0.3);
+        this.someGraphics.fillPoints(this.intersections);
+        // for (let intersection of this.intersections) {
+        //     this.someGraphics.strokeLineShape(new Phaser.Geom.Line(
+        //         this.ray.origin.x,
+        //         this.ray.origin.y,
+        //         intersection.x,
+        //         intersection.y
+        //     ));
+        // }
+        //draw detection range radius
+        this.someGraphics.strokeCircleShape(new Phaser.Geom.Circle(
+            this.ray.origin.x,
+            this.ray.origin.y,
+            this.ray.detectionRange
+        ));
+        // this.someGraphics.fillStyle(0xff00ff);
+        // this.someGraphics.fillPoint(this.ray.origin.x, this.ray.origin.y, 3);
     }
 }

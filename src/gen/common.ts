@@ -1,12 +1,10 @@
 import { createRandomFiller, createSmoothingRule, generateWithNoiseCaves, smoothIterations } from "./caves";
 import { clearEdgesCells, clearNodeCells, generatePathInfo, WorldPathInfo } from "./path";
-import { deepCopyArray } from "./util";
+import { clearUnreachableWalls, deepCopyArray } from "./util";
 
 export enum WorldCell {
     WALL,
-    EMPTY,
-    START,
-    END
+    EMPTY
 }
 
 export type Map = WorldCell[][];
@@ -48,6 +46,7 @@ export function generateWorld(): World {
     map = clearNodeCells(map, pathInfo);
     map = clearEdgesCells(map, pathInfo);
     map = smoothIterations(map, 4, 6);
+    map = clearUnreachableWalls(map, pathInfo.nodes[0].coords);
 
     return {
         height,
