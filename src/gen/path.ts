@@ -1,4 +1,4 @@
-import { applyRuleToAllButEdges, applyRuleToCoords, Map, World, WorldCell } from "./common";
+import { applyRuleToAllButEdges, applyRuleToCoords, WorldMap, World, WorldCell } from "./common";
 import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, MAX_EDGE_AMP, MAX_EDGE_FREQ, MAX_EDGE_WIDTH, MIN_EDGE_AMP, MIN_EDGE_FREQ, MIN_EDGE_WIDTH, PATH_WIDTH_DEVIATION, WORLD_PADDING } from "./const";
 import { distance, randomInRange } from "./util";
 
@@ -25,7 +25,7 @@ export interface WorldPathInfo {
     edges: PathEdge[];
 }
 
-export function generatePathInfo(map: Map): WorldPathInfo {
+export function generatePathInfo(map: WorldMap): WorldPathInfo {
     const nodes: PathNode[] = [];
     const edges: PathEdge[] = [];
     const height = map.length;
@@ -71,7 +71,7 @@ export function generatePathInfo(map: Map): WorldPathInfo {
     };
 }
 
-export function clearNodeCells(map: Map, info: WorldPathInfo): Map {
+export function clearNodeCells(map: WorldMap, info: WorldPathInfo): WorldMap {
     const nodes = info.nodes;
     return applyRuleToAllButEdges(map, (point, neigh) => {
         for (let i = 0; i < nodes.length; i++) {
@@ -86,7 +86,7 @@ export function clearNodeCells(map: Map, info: WorldPathInfo): Map {
     });
 }
 
-export function clearEdgesCells(map: Map, info: WorldPathInfo): Map {
+export function clearEdgesCells(map: WorldMap, info: WorldPathInfo): WorldMap {
     let newMap = map;
     const edges = info.edges;
     edges.forEach((edge) => {
@@ -95,7 +95,7 @@ export function clearEdgesCells(map: Map, info: WorldPathInfo): Map {
     return newMap;
 }
 
-export function clearSingleEdgeCells(map: Map, edge: PathEdge): Map {
+export function clearSingleEdgeCells(map: WorldMap, edge: PathEdge): WorldMap {
     return applyRuleToAllButEdges(
         map,
         (point, neigh) => checkEdgeRuleForCell(point, edge, map[point.y][point.x])

@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import { generateWorld, World, WorldCell } from '../../gen/common';
+import { generateWorld, WallBlock, World, WorldCell } from '../../gen/common';
 import { PathNode } from '../../gen/path';
 
 export class Game extends Scene {
@@ -12,6 +12,8 @@ export class Game extends Scene {
     private tileSize = 10;
     private playerSizeTiles = 3.5;
     private wallColor = 0x8b4513;
+    private wallBlockColor = 0xFF3333;
+    private polygonColor = 0x3333FF;
     private backgroundColor = 0x000000;
 
     private wallGroup: Phaser.Physics.Arcade.StaticGroup;
@@ -29,8 +31,8 @@ export class Game extends Scene {
 
     private isRefueling = false;
 
-    private readonly MIN_ZOOM = 1.8;
-    private readonly MAX_ZOOM = 1.5;
+    private readonly MIN_ZOOM = 1.0;
+    private readonly MAX_ZOOM = 1.1;
     private readonly MAX_SPEED = 600;
 
     private fuel: number;
@@ -43,7 +45,10 @@ export class Game extends Scene {
         this.world = generateWorld();
         this.fuel = this.FUEL_MAX;
 
-        this.createWalls();
+        this.wallGroup = this.physics.add.staticGroup();
+        // this.createWalls();
+        this.createWallBlocks();
+        // this.drawPolygons();
         this.createPlayer();
         this.addStartPlatform();
         this.addEndPlatform();
@@ -77,7 +82,7 @@ export class Game extends Scene {
         this.updateCameraZoom();
 
 
-        if (this.deltaSum > 150) {
+        if (this.deltaSum > 30) {
             this.ray.setOrigin(this.player.x, this.player.y);
             this.intersections = this.ray.castCircle();
             this.redrawLight();
@@ -108,18 +113,57 @@ export class Game extends Scene {
         this.cameras.resize(width, height);
     }
 
-    private createWalls(): void {
-        this.wallGroup = this.physics.add.staticGroup();
+    // private drawPolygons(): void {
+    //     for (const polygon of this.world.approxPolygons) {
+    //         if (polygon.length < 3) continue; // пропускаем слишком маленькие полигоны
 
+    //         const graphics = this.add.graphics();
+    //         graphics.fillStyle(this.polygonColor, 0.5);
+    //         graphics.beginPath();
+
+    //         const [first, ...rest] = polygon;
+
+    //         graphics.moveTo(first.x * this.tileSize, first.y * this.tileSize);
+    //         for (const point of rest) {
+    //             graphics.lineTo(point.x * this.tileSize, point.y * this.tileSize);
+    //         }
+
+    //         graphics.closePath();
+    //         graphics.fillPath();
+
+    //         this.wallGroup.add(graphics);
+    //     }
+    // }
+
+    private createWalls(): void {
         for (let y = 0; y < this.world.height; y++) {
             for (let x = 0; x < this.world.width; x++) {
                 if (this.world.map[y][x] === WorldCell.WALL) {
                     const posX = x * this.tileSize + this.tileSize / 2;
                     const posY = y * this.tileSize + this.tileSize / 2;
-                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.wallColor);
+                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.wallColor, 0.5);
                     this.wallGroup.add(wall);
                 }
             }
+        }
+    }
+
+    private createWallBlocks(): void {
+        for (const block of this.world.optimisedWallBlocks) {
+            const widthCoords = block.rightBottom.x - block.leftTop.x;
+            const widthPixels = (widthCoords + 1) * this.tileSize;
+            const heightCoords = block.rightBottom.y - block.leftTop.y;
+            const heightPixels = (heightCoords + 1) * this.tileSize;
+
+            const xCenter = (block.rightBottom.x + block.leftTop.x) / 2;
+            const yCenter = (block.rightBottom.y + block.leftTop.y) / 2;
+
+            const posX = xCenter * this.tileSize + this.tileSize / 2;
+            const posY = yCenter * this.tileSize + this.tileSize / 2;
+
+            const wall = this.add.rectangle(posX, posY, widthPixels, heightPixels, this.wallBlockColor, 0.4);
+
+            this.wallGroup.add(wall);
         }
     }
 

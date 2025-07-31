@@ -1,4 +1,4 @@
-import { WorldCell, Map, generateFilledMap, applyRuleToAllButEdges } from "./common";
+import { WorldCell, WorldMap, generateFilledMap, applyRuleToAllButEdges } from "./common";
 
 export function createRandomFiller(p: number): () => WorldCell {
     return () => Math.random() > p ? WorldCell.EMPTY : WorldCell.WALL;
@@ -20,8 +20,8 @@ export function countNeighbours(array: WorldCell[][]): number {
     return count;
 }
 
-export function createSmoothingRule(neighbourCount: number): (array: Map) => WorldCell {
-    return (array: Map) => {
+export function createSmoothingRule(neighbourCount: number): (array: WorldMap) => WorldCell {
+    return (array: WorldMap) => {
         if (countNeighbours(array) >= neighbourCount) {
             return WorldCell.WALL;
         } else {
@@ -33,8 +33,8 @@ export function createSmoothingRule(neighbourCount: number): (array: Map) => Wor
 export function generateWithNoiseCaves(
     height: number,
     width: number
-): Map {
-    let map: Map = generateFilledMap(height, width);
+): WorldMap {
+    let map: WorldMap = generateFilledMap(height, width);
 
     map = applyRuleToAllButEdges(map, createRandomFiller(0.39));
     map = smoothIterations(map, 4, 2);
@@ -42,7 +42,7 @@ export function generateWithNoiseCaves(
     return map;
 }
 
-export function smoothIterations(map: Map, neighbours: number, iterations: number): Map {
+export function smoothIterations(map: WorldMap, neighbours: number, iterations: number): WorldMap {
     let newMap = map;
     const smoothingRule = createSmoothingRule(neighbours);
     for (let i = 0; i < iterations; i++) {

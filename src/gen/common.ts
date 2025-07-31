@@ -1,19 +1,20 @@
 import { createRandomFiller, createSmoothingRule, generateWithNoiseCaves, smoothIterations } from "./caves";
 import { clearEdgesCells, clearNodeCells, generatePathInfo, WorldPathInfo } from "./path";
-import { clearUnreachableWalls, deepCopyArray } from "./util";
+import { clearUnreachableWalls, deepCopyArray, fillFakeWalls, getOptimisedWallBlocks, refineWallBlocks } from "./util";
 
 export enum WorldCell {
     WALL,
     EMPTY
 }
 
-export type Map = WorldCell[][];
+export type WorldMap = WorldCell[][];
 
 export interface World {
     height: number;
     width: number;
-    map: Map;
+    map: WorldMap;
     pathInfo: WorldPathInfo;
+    optimisedWallBlocks: WallBlock[];
 }
 
 export interface Point {
@@ -21,9 +22,16 @@ export interface Point {
     y: number;
 }
 
+export type Polygon = Point[];
+
+export interface WallBlock {
+    leftTop: Point;
+    rightBottom: Point;
+}
+
 export function generateWorld(): World {
-    const height: number = 130;
-    const width: number = 300;
+    const height: number = 400;
+    const width: number = 1000;
 
     // let map = generateFilledMap(height, width);
 
@@ -45,22 +53,38 @@ export function generateWorld(): World {
     const pathInfo = generatePathInfo(map);
     map = clearNodeCells(map, pathInfo);
     map = clearEdgesCells(map, pathInfo);
-    map = smoothIterations(map, 4, 6);
-    map = clearUnreachableWalls(map, pathInfo.nodes[0].coords);
+    map = smoothIterations(map, 4, 8);
+    // map = fillFakeWalls(map);
+
+    let countWalls = 0;
+    map.forEach((row: WorldCell[]) => {
+        row.forEach((cell: WorldCell) => {
+            if (cell === WorldCell.WALL) {
+                countWalls++;
+            }
+        });
+    })
+
+    const optimisedWallBlocks = getOptimisedWallBlocks(map);
+    console.log("original walls : " + countWalls);
+    console.log("optimised walls : " + optimisedWallBlocks.length);
+    const refinedWalls = refineWallBlocks(optimisedWallBlocks);
+    console.log("refined walls : " + optimisedWallBlocks.length);
 
     return {
         height,
         width,
         map,
-        pathInfo
+        pathInfo,
+        optimisedWallBlocks: refinedWalls
     };
 }
 
 export function generateFilledMap(
     height: number,
     width: number
-): Map {
-    let map: Map = [];
+): WorldMap {
+    let map: WorldMap = [];
 
     for (let y = 0; y < height; y++) {
         const row: WorldCell[] = [];
@@ -76,7 +100,7 @@ export function generateFilledMap(
 }
 
 export function clearSinPath(
-    map: Map,
+    map: WorldMap,
     height: number,
     width: number,
     padding_x: number,
@@ -84,7 +108,7 @@ export function clearSinPath(
     freq: number,
     tunnelHeight: number,
     ampModifier: number
-): Map {
+): WorldMap {
     return applyRuleToAllButEdges(
         map,
         (point) => {
@@ -99,23 +123,23 @@ export function clearSinPath(
 }
 
 export function applyRuleToAllButEdges(
-    map: Map,
-    rule: (point: Point, neighbours: Map) => WorldCell
-): Map {
+    map: WorldMap,
+    rule: (point: Point, neighbours: WorldMap) => WorldCell
+): WorldMap {
     const height = map.length;
     const width = map[0].length;
     return applyRuleToCoords(map, 1, width - 1, 1, height - 1, rule);
 }
 
 export function applyRuleToCoords(
-    map: Map,
+    map: WorldMap,
     fromX: number,
     toX: number,
     fromY: number,
     toY: number,
-    rule: (point: Point, neighbours: Map) => WorldCell
-): Map {
-    let newMap: Map = deepCopyArray(map);
+    rule: (point: Point, neighbours: WorldMap) => WorldCell
+): WorldMap {
+    let newMap: WorldMap = deepCopyArray(map);
 
     for (let y = fromY; y < toY; y++) {
         for (let x = fromX; x < toX; x++) {
