@@ -30,8 +30,8 @@ export interface WallBlock {
 }
 
 export function generateWorld(): World {
-    const height: number = 400;
-    const width: number = 1000;
+    const height: number = 200;
+    const width: number = 300;
 
     // let map = generateFilledMap(height, width);
 

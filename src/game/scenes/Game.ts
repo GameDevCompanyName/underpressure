@@ -1,8 +1,12 @@
 import { Scene } from 'phaser';
-import { generateWorld, WallBlock, World, WorldCell } from '../../gen/common';
+import { generateWorld, World, WorldCell } from '../../gen/common';
 import { PathNode } from '../../gen/path';
+import SoundManager from '../../util/SoundManager';
+import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 
 export class Game extends Scene {
+    private soundManager: SoundManager;
+
     private raycasterPlugin: PhaserRaycaster;
     private raycaster: Raycaster;
     private ray: Raycaster.Ray;
@@ -11,10 +15,13 @@ export class Game extends Scene {
 
     private tileSize = 10;
     private playerSizeTiles = 3.5;
-    private wallColor = 0x8b4513;
-    private wallBlockColor = 0xFF3333;
-    private polygonColor = 0x3333FF;
-    private backgroundColor = 0x000000;
+    private wallBlockColor = 0x4A4E69;
+    private backgroundColor = 0x5A5E79;
+    private endPlatformColor = 0x22223B;
+    private platformColor = 0x9A8C98;
+    private playerColor = 0x9A8C98;
+    private barBGcolor = 0xF7F4EA;
+    private barFillColor = 0x75C9C8;
 
     private wallGroup: Phaser.Physics.Arcade.StaticGroup;
     private world: World;
@@ -31,8 +38,8 @@ export class Game extends Scene {
 
     private isRefueling = false;
 
-    private readonly MIN_ZOOM = 1.0;
-    private readonly MAX_ZOOM = 1.1;
+    private readonly MIN_ZOOM = 0.5;
+    private readonly MAX_ZOOM = 0.6;
     private readonly MAX_SPEED = 600;
 
     private fuel: number;
@@ -41,7 +48,16 @@ export class Game extends Scene {
         super('Game');
     }
 
+    preload() {
+        this.soundManager = new SoundManager(this);
+        this.soundManager.preloadGameSounds();
+    }
+
     create() {
+        this.soundManager.initGameInstances();
+        this.soundManager.startCaveAmbience();
+        this.soundManager.playMusic();
+
         this.world = generateWorld();
         this.fuel = this.FUEL_MAX;
 
@@ -57,6 +73,7 @@ export class Game extends Scene {
         this.createUI();
         this.setupControls();
         this.setupWorldBounds();
+        this.setupFadingText(1);
 
         this.raycaster = this.raycasterPlugin.createRaycaster();
         this.ray = this.raycaster.createRay({
@@ -77,12 +94,10 @@ export class Game extends Scene {
     update(time: number, delta: number) {
         this.handlePlayerMovement(delta);
         this.handleRefuel(delta);
-        this.updateFuelBar();
-        this.updateSpeedText();
+        // this.updateSpeedText();
         this.updateCameraZoom();
 
-
-        if (this.deltaSum > 30) {
+        if (this.deltaSum > 50) {
             this.ray.setOrigin(this.player.x, this.player.y);
             this.intersections = this.ray.castCircle();
             this.redrawLight();
@@ -91,6 +106,7 @@ export class Game extends Scene {
             this.deltaSum += delta;
         }
 
+        this.updateFuelBar();
     }
 
     private handleRefuel(delta: number) {
@@ -141,7 +157,7 @@ export class Game extends Scene {
                 if (this.world.map[y][x] === WorldCell.WALL) {
                     const posX = x * this.tileSize + this.tileSize / 2;
                     const posY = y * this.tileSize + this.tileSize / 2;
-                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.wallColor, 0.5);
+                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.wallBlockColor, 0.5);
                     this.wallGroup.add(wall);
                 }
             }
@@ -149,6 +165,10 @@ export class Game extends Scene {
     }
 
     private createWallBlocks(): void {
+        this.addExtraWallsAround();
+        // create 4 walls - one from -1000 to (width + 1000) and from 0 to 1000 height
+        // i need this walls to fully surround map with walls, so that player does not see the empty world arround
+
         for (const block of this.world.optimisedWallBlocks) {
             const widthCoords = block.rightBottom.x - block.leftTop.x;
             const widthPixels = (widthCoords + 1) * this.tileSize;
@@ -161,10 +181,62 @@ export class Game extends Scene {
             const posX = xCenter * this.tileSize + this.tileSize / 2;
             const posY = yCenter * this.tileSize + this.tileSize / 2;
 
-            const wall = this.add.rectangle(posX, posY, widthPixels, heightPixels, this.wallBlockColor, 0.4);
+            const wall = this.add.rectangle(posX, posY, widthPixels, heightPixels, this.wallBlockColor);
 
             this.wallGroup.add(wall);
         }
+    }
+
+    private addExtraWallsAround() {
+        const arrayHeight = this.world.height;
+        const arrayWidth = this.world.width;
+        const tileSize = this.tileSize;
+
+        const mapPixelWidth = arrayWidth * tileSize;
+        const mapPixelHeight = arrayHeight * tileSize;
+
+        // ===== Создаём 4 внешние стены =====
+        const extraSize = 1000;
+
+        // Верхняя стена
+        const topWall = this.add.rectangle(
+            mapPixelWidth / 2, // по центру карты
+            -extraSize / 2,    // на -500 по Y
+            mapPixelWidth + extraSize * 2, // шире карты
+            extraSize,
+            this.wallBlockColor
+        );
+        this.wallGroup.add(topWall);
+
+        // Нижняя стена
+        const bottomWall = this.add.rectangle(
+            mapPixelWidth / 2,
+            mapPixelHeight + extraSize / 2, // ниже карты
+            mapPixelWidth + extraSize * 2,
+            extraSize,
+            this.wallBlockColor
+        );
+        this.wallGroup.add(bottomWall);
+
+        // Левая стена
+        const leftWall = this.add.rectangle(
+            -extraSize / 2, // левее карты
+            mapPixelHeight / 2,
+            extraSize,
+            mapPixelHeight + extraSize * 2,
+            this.wallBlockColor
+        );
+        this.wallGroup.add(leftWall);
+
+        // Правая стена
+        const rightWall = this.add.rectangle(
+            mapPixelWidth + extraSize / 2, // правее карты
+            mapPixelHeight / 2,
+            extraSize,
+            mapPixelHeight + extraSize * 2,
+            this.wallBlockColor
+        );
+        this.wallGroup.add(rightWall);
     }
 
     private addStartPlatform(): void {
@@ -188,7 +260,7 @@ export class Game extends Scene {
             posY + 5, // немного ниже центра игрока
             this.tileSize * this.playerSizeTiles,
             10,
-            0x888888
+            this.endPlatformColor
         );
 
         this.physics.add.existing(platform, true);
@@ -206,7 +278,7 @@ export class Game extends Scene {
             posY + 5,
             this.tileSize * this.playerSizeTiles,
             10,
-            0x00ff00 // зелёная платформа для заправки
+            this.platformColor // зелёная платформа для заправки
         );
 
         this.physics.add.existing(platform, true);
@@ -247,7 +319,7 @@ export class Game extends Scene {
             position.y,
             this.tileSize * this.playerSizeTiles,
             this.tileSize * this.playerSizeTiles,
-            0xff0000 // Можно заменить на this.playerColor если хочешь
+            this.playerColor // Можно заменить на this.playerColor если хочешь
         );
 
         this.physics.add.existing(player);
@@ -270,18 +342,11 @@ export class Game extends Scene {
     }
 
     private createUI(): void {
-        this.speedText = this.add.text(0, 0, '', {
-            fontSize: '16px',
-            color: '#000000',
-            backgroundColor: '#ffffff',
-        });
-        this.speedText.setOrigin(0.5, 1);
-
         const barWidth = this.tileSize * this.playerSizeTiles * 1.5;
         const barHeight = 10;
 
-        this.fuelBarBackground = this.add.rectangle(0, 0, barWidth, barHeight, 0x000000, 0.3);
-        this.fuelBarForeground = this.add.rectangle(0, 0, barWidth, barHeight, 0x00ff00, 0.6);
+        this.fuelBarBackground = this.add.rectangle(0, 0, barWidth, barHeight, this.barBGcolor, 0.7);
+        this.fuelBarForeground = this.add.rectangle(0, 0, barWidth, barHeight, this.barFillColor, 1.0);
 
         this.fuelBarBackground.setOrigin(0.5, 0);
         this.fuelBarForeground.setOrigin(0.5, 0);
@@ -321,9 +386,12 @@ export class Game extends Scene {
 
         const directionCount = Math.abs(dirX) + Math.abs(dirY);
         if (directionCount > 0) {
+            this.soundManager.startThrustSound();
             const multiplier = directionCount === 2 ? 1.5 : 1;
             this.fuel -= this.FUEL_CONSUMPTION_BASE * multiplier * dt;
             this.fuel = Math.max(this.fuel, 0);
+        } else {
+            this.soundManager.stopThrustSound();
         }
     }
 
@@ -366,7 +434,7 @@ export class Game extends Scene {
 
     private redrawLight() {
         this.someGraphics.clear();
-        this.someGraphics.fillStyle(0xffffff, 0.3);
+        this.someGraphics.fillStyle(0xffDDDD, 0.5);
         this.someGraphics.fillPoints(this.intersections);
         // for (let intersection of this.intersections) {
         //     this.someGraphics.strokeLineShape(new Phaser.Geom.Line(
@@ -384,5 +452,41 @@ export class Game extends Scene {
         ));
         // this.someGraphics.fillStyle(0xff00ff);
         // this.someGraphics.fillPoint(this.ray.origin.x, this.ray.origin.y, 3);
+    }
+
+    private setupFadingText(levelNumber: number) {
+        const titleText = "LEVEL " + levelNumber;
+        const titleTextObject: Phaser.GameObjects.Text = this.add.text(
+            this.player.x - WIDTH_PIXELS / 2,
+            this.player.y + HEIGHT_PIXELS - 100,
+            titleText,
+            { fontFamily: 'Courier New', fontStyle: "bold", fontSize: 40 }
+        );
+
+        const musicText = "Destructo20 - " + this.soundManager.getTrackName();
+        const musicTextObject: Phaser.GameObjects.Text = this.add.text(
+            this.player.x - WIDTH_PIXELS / 2,
+            this.player.y + HEIGHT_PIXELS - 50,
+            musicText,
+            { fontFamily: 'Courier New', fontSize: 26 }
+        );
+
+        setTimeout(() => {
+            this.tweens.add({
+                targets: [musicTextObject, titleTextObject],
+                repeat: 0,
+                duration: 1000,
+                ease: "Linear",
+                yoyo: false,
+                alpha: {
+                    getStart: () => 1,
+                    getEnd: () => 0
+                },
+                onComplete: () => {
+                    musicTextObject.destroy();
+                    titleTextObject.destroy();
+                }
+            })
+        }, 2000)
     }
 }
