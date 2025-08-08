@@ -23,6 +23,9 @@ export class Game extends Scene {
     private barBGcolor = 0xF7F4EA;
     private barFillColor = 0x75C9C8;
 
+    private lightColor = 0x999999;
+    private engineLightColor = 0xBBAAAA;
+
     private wallGroup: Phaser.Physics.Arcade.StaticGroup;
     private world: World;
 
@@ -32,11 +35,12 @@ export class Game extends Scene {
     private fuelBarBackground: Phaser.GameObjects.Rectangle;
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
 
-    private readonly FUEL_MAX = 1000;
+    private readonly FUEL_MAX = 200;
     private readonly FUEL_CONSUMPTION_BASE = 10;
     private readonly REFUEL_RATE = 0.2;
 
     private isRefueling = false;
+    private isThrusting = false;
 
     private readonly MIN_ZOOM = 0.5;
     private readonly MAX_ZOOM = 0.6;
@@ -372,7 +376,11 @@ export class Game extends Scene {
 
         body.acceleration.set(0);
 
-        if (this.fuel <= 0) return;
+        if (this.fuel <= 0) {
+            this.isThrusting = false;
+            this.soundManager.stopThrustSound();
+            return;
+        }
 
         let dirX = 0;
         let dirY = 0;
@@ -385,12 +393,15 @@ export class Game extends Scene {
         if (dirY !== 0) body.acceleration.y = dirY * 800;
 
         const directionCount = Math.abs(dirX) + Math.abs(dirY);
-        if (directionCount > 0) {
-            this.soundManager.startThrustSound();
+
+        if (directionCount > 0 && this.fuel > 0) {
             const multiplier = directionCount === 2 ? 1.5 : 1;
             this.fuel -= this.FUEL_CONSUMPTION_BASE * multiplier * dt;
             this.fuel = Math.max(this.fuel, 0);
+            this.isThrusting = true;
+            this.soundManager.startThrustSound();
         } else {
+            this.isThrusting = false;
             this.soundManager.stopThrustSound();
         }
     }
@@ -434,24 +445,18 @@ export class Game extends Scene {
 
     private redrawLight() {
         this.someGraphics.clear();
-        this.someGraphics.fillStyle(0xffDDDD, 0.5);
+        if (!this.isThrusting) {
+            this.someGraphics.fillStyle(this.lightColor, 0.5);
+        } else {
+            this.someGraphics.fillStyle(this.engineLightColor, 0.5);
+        }
         this.someGraphics.fillPoints(this.intersections);
-        // for (let intersection of this.intersections) {
-        //     this.someGraphics.strokeLineShape(new Phaser.Geom.Line(
-        //         this.ray.origin.x,
-        //         this.ray.origin.y,
-        //         intersection.x,
-        //         intersection.y
-        //     ));
-        // }
-        //draw detection range radius
+
         this.someGraphics.strokeCircleShape(new Phaser.Geom.Circle(
             this.ray.origin.x,
             this.ray.origin.y,
             this.ray.detectionRange
         ));
-        // this.someGraphics.fillStyle(0xff00ff);
-        // this.someGraphics.fillPoint(this.ray.origin.x, this.ray.origin.y, 3);
     }
 
     private setupFadingText(levelNumber: number) {
