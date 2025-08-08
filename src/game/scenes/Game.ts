@@ -43,9 +43,9 @@ export class Game extends Scene {
     private readonly FUEL_CONSUMPTION_BASE = 10;
     private readonly REFUEL_RATE = 0.2;
 
-    private isRefueling = false;
-    private isThrusting = false;
-    private endState = false;
+    private isRefueling: boolean;
+    private isThrusting: boolean;
+    private endState: boolean;
 
     private readonly MIN_ZOOM = 0.5;
     private readonly MAX_ZOOM = 0.6;
@@ -57,18 +57,34 @@ export class Game extends Scene {
         super('Game');
     }
 
+    shutdown() {
+        // Удаляем текстуру
+        if (this.textures.exists('visionGradient')) {
+            this.textures.remove('visionGradient');
+        }
+
+        // Уничтожаем спрайт
+        if (this.visionGradient) {
+            this.visionGradient.destroy();
+        }
+    }
+
     preload() {
         this.soundManager = new SoundManager(this);
         this.soundManager.preloadGameSounds();
     }
 
     create() {
+        this.endState = false;
+        this.isRefueling = false;
+        this.isThrusting = false;
+        this.fuel = this.FUEL_MAX;
+
         this.soundManager.initGameInstances();
         this.soundManager.startCaveAmbience();
         this.soundManager.playMusic();
 
         this.world = generateWorld();
-        this.fuel = this.FUEL_MAX;
 
         this.worldColors = getRandomWorldColors();
 
@@ -126,6 +142,10 @@ export class Game extends Scene {
     }
 
     private setupVisionGradient() {
+        if (this.textures.exists('visionGradient')) {
+            this.textures.remove('visionGradient');
+        }
+
         const x = this.player.x;
         const y = this.player.y;
         const radiusStart = this.VISION * 0.4;
