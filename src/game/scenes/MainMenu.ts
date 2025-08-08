@@ -1,4 +1,6 @@
 import { Scene, GameObjects } from 'phaser';
+import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
+import { createButton } from '../../util/ui';
 
 export class MainMenu extends Scene
 {
@@ -11,22 +13,14 @@ export class MainMenu extends Scene
         super('MainMenu');
     }
 
-    create ()
-    {
-        this.background = this.add.image(512, 384, 'background');
+    preload() {
 
-        this.logo = this.add.image(512, 300, 'logo');
-
-        this.title = this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5);
-
-        this.input.once('pointerdown', () => {
-
-            this.scene.start('Game');
-
-        });
     }
+
+    create () {
+        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, 'Начать', () => this.scene.start('Game'));
+        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 10, 'Рекорды', () => {});
+    }
+
+
 }

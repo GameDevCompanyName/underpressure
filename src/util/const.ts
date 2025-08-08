@@ -1,2 +1,2 @@
-export const WIDTH_PIXELS = 350;
-export const HEIGHT_PIXELS = 250;
+export const WIDTH_PIXELS = 600;
+export const HEIGHT_PIXELS = 400;

@@ -13,6 +13,8 @@ export class Game extends Scene {
     private intersections: Phaser.Geom.Point[];
     private someGraphics: Phaser.GameObjects.Graphics;
 
+    private VISION: number = 550;
+
     private tileSize = 10;
     private playerSizeTiles = 3.5;
     private wallBlockColor = 0x4A4E69;
@@ -34,6 +36,7 @@ export class Game extends Scene {
     private speedText: Phaser.GameObjects.Text;
     private fuelBarBackground: Phaser.GameObjects.Rectangle;
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
+    private visionGradient: Phaser.GameObjects.Image;
 
     private readonly FUEL_MAX = 200;
     private readonly FUEL_CONSUMPTION_BASE = 10;
@@ -74,6 +77,7 @@ export class Game extends Scene {
         this.addEndPlatform();
         this.addRefuelPlatformsForIntermediateNodes();
         this.setupCamera();
+        this.setupVisionGradient();
         this.createUI();
         this.setupControls();
         this.setupWorldBounds();
@@ -85,12 +89,13 @@ export class Game extends Scene {
                 x: 0,
                 y: 0
             },
-            detectionRange: 500
+            detectionRange: this.VISION
         });
         this.raycaster.mapGameObjects(this.wallGroup.getChildren());
         //cast ray in all directions
         this.intersections = this.ray.castCircle();
         this.someGraphics = this.add.graphics({ lineStyle: { width: 1, color: 0x00ff00 }, fillStyle: { color: 0xffffff, alpha: 0.3 } });
+        // this.someGraphics.setDepth(2);
     }
 
     private deltaSum = 0;
@@ -111,6 +116,40 @@ export class Game extends Scene {
         }
 
         this.updateFuelBar();
+        this.visionGradient.setPosition(this.player.x, this.player.y);
+    }
+
+    private setupVisionGradient() {
+        const x = this.player.x;
+        const y = this.player.y;
+        const radiusStart = this.VISION * 0.4;
+        const radiusEnd = this.VISION;
+        const gradientColor = 0x000000;
+
+        // Создаем текстуру для градиента
+        const texture = this.textures.createCanvas('visionGradient', window.innerWidth, window.innerHeight)!;
+        const ctx = texture.getContext();
+
+        // Создаем радиальный градиент
+        const gradient = ctx.createRadialGradient(
+            window.innerWidth / 2, window.innerHeight / 2, radiusStart,  // Внутренний круг (начало градиента)
+            window.innerWidth / 2, window.innerHeight / 2, radiusEnd     // Внешний круг (конец градиента)
+        );
+
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');      // Полностью прозрачный в центре
+        gradient.addColorStop(1, `rgba(0, 0, 0, 1)`);    // Затемнение к краю
+
+        // Рисуем градиент
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        texture.refresh();
+
+        // Создаем спрайт с градиентом
+        this.visionGradient = this.add.image(0, 0, 'visionGradient')
+            .setDepth(1)
+            .setPosition(x, y)
+            .setOrigin(0.5, 0.5)
+            .setBlendMode(Phaser.BlendModes.MULTIPLY);
     }
 
     private handleRefuel(delta: number) {
