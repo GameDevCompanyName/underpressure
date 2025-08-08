@@ -1,9 +1,10 @@
 import { Scene } from 'phaser';
 import { generateWorld, World, WorldCell } from '../../gen/common';
-import { PathNode } from '../../gen/path';
+import { PathNode, PathNodeType } from '../../gen/path';
 import SoundManager from '../../util/SoundManager';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { getRandomWorldColors, WorldColors } from '../../util/worldColorGeneration';
+import { fadeFromBlack } from '../../util/ui';
 
 export class Game extends Scene {
     private soundManager: SoundManager;
@@ -44,6 +45,7 @@ export class Game extends Scene {
 
     private isRefueling = false;
     private isThrusting = false;
+    private endState = false;
 
     private readonly MIN_ZOOM = 0.5;
     private readonly MAX_ZOOM = 0.6;
@@ -98,6 +100,8 @@ export class Game extends Scene {
         this.intersections = this.ray.castCircle();
         this.someGraphics = this.add.graphics({ lineStyle: { width: 1, color: 0x00ff00 }, fillStyle: { color: 0xffffff, alpha: 0.3 } });
         // this.someGraphics.setDepth(2);
+
+        fadeFromBlack(this, 1000);
     }
 
     private deltaSum = 0;
@@ -286,15 +290,20 @@ export class Game extends Scene {
 
     private addStartPlatform(): void {
         const startNode = this.world.pathInfo.nodes[0];
-        this.addPlatformAtNode(startNode);
+        this.addPlatformAtNode(startNode, this.endPlatformColor);
     }
 
     private addEndPlatform(): void {
         const endNode = this.world.pathInfo.nodes[this.world.pathInfo.nodes.length - 1];
-        this.addPlatformAtNode(endNode);
+        this.addPlatformAtNode(endNode, this.endPlatformColor, () => {
+            if (!this.endState) {
+                this.endState = true;
+                this.soundManager.stopSoundsAndPlayWin();
+            }
+        });
     }
 
-    private addPlatformAtNode(node: PathNode): void {
+    private addPlatformAtNode(node: PathNode, color: number, collisionHandler?: () => void): void {
         const { x, y } = node.coords;
 
         const posX = x * this.tileSize;
@@ -309,35 +318,19 @@ export class Game extends Scene {
         );
 
         this.physics.add.existing(platform, true);
-        this.physics.add.collider(this.player, platform);
-    }
-
-    private addRefuelPlatformAtNode(node: PathNode): void {
-        const { x, y } = node.coords;
-
-        const posX = x * this.tileSize;
-        const posY = y * this.tileSize + (this.tileSize * this.playerSizeTiles) / 2;
-
-        const platform = this.add.rectangle(
-            posX,
-            posY + 5,
-            this.tileSize * this.playerSizeTiles,
-            10,
-            this.platformColor // зелёная платформа для заправки
-        );
-
-        this.physics.add.existing(platform, true);
-        this.physics.add.collider(this.player, platform, () => {
-            if (!this.isRefueling) {
-                this.isRefueling = true;
-            }
-        });
+        this.physics.add.collider(this.player, platform, collisionHandler);
     }
 
     private addRefuelPlatformsForIntermediateNodes(): void {
         const nodes = this.world.pathInfo.nodes;
         for (let i = 1; i < nodes.length - 1; i++) {
-            this.addRefuelPlatformAtNode(nodes[i]);
+            if (nodes[i].type === PathNodeType.REFUEL) {
+                this.addPlatformAtNode(nodes[i], this.platformColor, () => {
+                    if (!this.isRefueling) {
+                        this.isRefueling = true;
+                    }
+                });
+            }
         }
     }
 

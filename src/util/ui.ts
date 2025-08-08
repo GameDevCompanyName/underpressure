@@ -1,3 +1,5 @@
+import { Scene } from "phaser";
+
 export enum UI_COLOR {
     MAIN = 0x134074,
     SECONDARY = 0x13315C,
@@ -31,6 +33,62 @@ export function createButton(
         .on('pointerdown', onClick);
 
     return container;
+}
+
+export function fadeToBlack(
+    scene: Phaser.Scene,
+    duration: number = 1000,
+    onComplete?: () => void
+): Phaser.Tweens.Tween {
+    // Создаем Render Texture на весь экран
+    const rt = scene.add.renderTexture(0, 0, scene.sys.game.scale.gameSize.width, scene.sys.game.scale.gameSize.height)
+        .setOrigin(0)
+        .setDepth(9999)
+        .setScrollFactor(0)
+        .setAlpha(0) // Начинаем с прозрачного
+        .fill(0x000000); // Заливаем черным
+
+    return scene.tweens.add({
+        targets: rt,
+        alpha: 1,
+        duration,
+        ease: "Linear",
+        onComplete: () => {
+            onComplete?.();
+            // Не уничтожаем сразу, чтобы анимация не прерывалась
+            scene.time.delayedCall(100, () => rt.destroy());
+        }
+    });
+}
+
+export function fadeFromBlack(
+    scene: Scene,
+    duration: number = 1500,
+    onComplete?: () => void
+): Phaser.Tweens.Tween {
+    // Создаем/сбрасываем оверлей
+    const overlay = scene.add.rectangle(
+        0, 0,
+        scene.cameras.main.width * 3,
+        scene.cameras.main.height * 3,
+        0x000000,
+        1
+    )
+    .setOrigin(0.5)
+    .setDepth(9999)
+    .setScrollFactor(0)
+    .setVisible(true);
+
+    return scene.tweens.add({
+        targets: overlay,
+        alpha: 0,
+        duration,
+        ease: "Linear",
+        onComplete: () => {
+            overlay.destroy();
+            onComplete?.();
+        }
+    });
 }
 
 export function numToCssHex(color: UI_COLOR): string {

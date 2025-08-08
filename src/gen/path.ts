@@ -1,5 +1,5 @@
 import { applyRuleToAllButEdges, applyRuleToCoords, WorldMap, World, WorldCell } from "./common";
-import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, MAX_EDGE_AMP, MAX_EDGE_FREQ, MAX_EDGE_WIDTH, MIN_EDGE_AMP, MIN_EDGE_FREQ, MIN_EDGE_WIDTH, PATH_WIDTH_DEVIATION, WORLD_PADDING } from "./const";
+import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, MAX_EDGE_AMP, MAX_EDGE_FREQ, MAX_EDGE_WIDTH, MIN_EDGE_AMP, MIN_EDGE_FREQ, MIN_EDGE_WIDTH, PATH_WIDTH_DEVIATION, REFUEL_PLATRORM_BASE_P, WORLD_PADDING } from "./const";
 import { distance, randomInRange } from "./util";
 
 export interface PathNode {
@@ -9,7 +9,7 @@ export interface PathNode {
 }
 
 export enum PathNodeType {
-    START, END, COMMON
+    START, END, EMPTY, REFUEL
 }
 
 export interface PathEdge {
@@ -42,7 +42,13 @@ export function generatePathInfo(map: WorldMap): WorldPathInfo {
     for (let i = 0; i < count; i++) {
         const currentX = Math.floor(WORLD_PADDING + distanceX * i + distanceX / 2);
         const currentY = Math.floor(WORLD_PADDING + innerHeight * Math.random());
-        const type = i === 0 ? PathNodeType.START : i === count - 1 ? PathNodeType.END : PathNodeType.COMMON;
+        const type = i === 0 ?
+            PathNodeType.START :
+            i === count - 1 ?
+                PathNodeType.END :
+                Math.random() < REFUEL_PLATRORM_BASE_P
+                    ? PathNodeType.REFUEL
+                    : PathNodeType.EMPTY;
 
         const currentNode: PathNode = {
             coords: { x: currentX, y: currentY },

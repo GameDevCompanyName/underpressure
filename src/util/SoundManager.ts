@@ -24,6 +24,7 @@ export default class SoundManager {
     private thrustSound: Phaser.Sound.BaseSound;
     private caveAmbience: Phaser.Sound.BaseSound;
     private kick: Phaser.Sound.BaseSound;
+    private win: Phaser.Sound.BaseSound;
     private soundtrack: Phaser.Sound.BaseSound;
 
     constructor(scene: Scene) {
@@ -44,7 +45,8 @@ export default class SoundManager {
     initGameInstances() {
         this.thrustSound = this.scene.sound.add(SOUNDS.THRUST, { loop: true, volume: 0.2 });
         this.caveAmbience = this.scene.sound.add(SOUNDS.CAVE, { loop: true, volume: 0.2 });
-        this.kick = this.scene.sound.add(SOUNDS.KICK, {volume: 0.5});
+        this.kick = this.scene.sound.add(SOUNDS.KICK, { loop:false, volume: 0.4 });
+        this.win = this.scene.sound.add(SOUNDS.WIN, { loop:false, volume: 0.5 });
         this.soundtrack = this.scene.sound.add(this.soundtrackValue, { loop: true, volume: 1 });
     }
 
@@ -92,6 +94,12 @@ export default class SoundManager {
 
     pauseMusic() {
         this.soundtrack.pause();
+    }
+
+    stopSoundsAndPlayWin() {
+        this.stopThrustSound();
+        this.scene.tweens.add({ targets: [this.caveAmbience, this.soundtrack], volume: 0, duration: 500 });
+        this.win.play();
     }
 
 }
