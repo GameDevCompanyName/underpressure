@@ -45,7 +45,8 @@ export class Game extends Scene {
 
     private isRefueling: boolean;
     private isThrusting: boolean;
-    private endState: boolean;
+    private winState: boolean;
+    private loseState: boolean;
 
     private readonly MIN_ZOOM = 0.5;
     private readonly MAX_ZOOM = 0.6;
@@ -75,7 +76,8 @@ export class Game extends Scene {
     }
 
     create() {
-        this.endState = false;
+        this.winState = false;
+        this.loseState = false;
         this.isRefueling = false;
         this.isThrusting = false;
         this.fuel = this.FUEL_MAX;
@@ -316,8 +318,8 @@ export class Game extends Scene {
     private addEndPlatform(): void {
         const endNode = this.world.pathInfo.nodes[this.world.pathInfo.nodes.length - 1];
         this.addPlatformAtNode(endNode, this.endPlatformColor, () => {
-            if (!this.endState) {
-                this.endState = true;
+            if (!this.winState && !this.loseState) {
+                this.winState = true;
                 this.soundManager.stopSoundsAndPlayWin();
                 fadeToBlack(this, 1000, () => {
                     this.scene.start("MainMenu");
@@ -399,7 +401,14 @@ export class Game extends Scene {
 
     private setupPlayerCollisions(player: Phaser.GameObjects.Rectangle): void {
         this.physics.add.collider(player, this.wallGroup, () => {
-            // this.scene.restart(); // TODO: действие при столкновении со стеной
+            if (!this.winState && !this.loseState) {
+                this.loseState = true;
+                this.soundManager.stopSoundsAndPlayDeath();
+                fadeToBlack(this, 1000, () => {
+                    this.scene.start("MainMenu");
+                    this.scene.stop("Game");
+                });
+            }
         });
     }
 
@@ -434,7 +443,7 @@ export class Game extends Scene {
 
         body.acceleration.set(0);
 
-        if (this.fuel <= 0) {
+        if (this.fuel <= 0 || this.loseState || this.winState) {
             this.isThrusting = false;
             this.soundManager.stopThrustSound();
             return;
