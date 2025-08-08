@@ -17,17 +17,17 @@ export function createButton(
         fontSize: '26px',
         fontFamily: 'Courier New',
         fontStyle: "bold",
-        color: numToCssHex(UI_COLOR.MAIN),
+        color: numToCssHex(UI_COLOR.SURFACE),
     }).setOrigin(0.5);
 
-    const buttonBg = scene.add.rectangle(0, 0, buttonText.width + 20, 50, UI_COLOR.BG_LIGHT);
+    const buttonBg = scene.add.rectangle(0, 0, buttonText.width + 20, 50, UI_COLOR.SECONDARY);
     buttonBg.setStrokeStyle(4, UI_COLOR.BG_DARK);
 
     const container = scene.add.container(x, y, [buttonBg, buttonText]);
     container.setSize(buttonBg.width, buttonBg.height);
     container.setInteractive({ useHandCursor: true })
         .on('pointerover', () => buttonBg.setFillStyle(UI_COLOR.BG_DARK))
-        .on('pointerout', () => buttonBg.setFillStyle(UI_COLOR.BG_LIGHT))
+        .on('pointerout', () => buttonBg.setFillStyle(UI_COLOR.SECONDARY))
         .on('pointerdown', onClick);
 
     return container;

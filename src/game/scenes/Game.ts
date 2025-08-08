@@ -3,6 +3,7 @@ import { generateWorld, World, WorldCell } from '../../gen/common';
 import { PathNode } from '../../gen/path';
 import SoundManager from '../../util/SoundManager';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
+import { getRandomWorldColors, WorldColors } from '../../util/worldColorGeneration';
 
 export class Game extends Scene {
     private soundManager: SoundManager;
@@ -17,8 +18,7 @@ export class Game extends Scene {
 
     private tileSize = 10;
     private playerSizeTiles = 3.5;
-    private wallBlockColor = 0x4A4E69;
-    private backgroundColor = 0x5A5E79;
+    private worldColors: WorldColors;
     private endPlatformColor = 0x22223B;
     private platformColor = 0x9A8C98;
     private playerColor = 0x9A8C98;
@@ -67,6 +67,8 @@ export class Game extends Scene {
 
         this.world = generateWorld();
         this.fuel = this.FUEL_MAX;
+
+        this.worldColors = getRandomWorldColors();
 
         this.wallGroup = this.physics.add.staticGroup();
         // this.createWalls();
@@ -162,7 +164,7 @@ export class Game extends Scene {
     }
 
     private setupCamera(): void {
-        this.cameras.main.setBackgroundColor(this.backgroundColor);
+        this.cameras.main.setBackgroundColor(this.worldColors.bgColor);
         this.cameras.main.startFollow(this.player);
         this.scale.on('resize', this.handleResize, this);
     }
@@ -200,7 +202,7 @@ export class Game extends Scene {
                 if (this.world.map[y][x] === WorldCell.WALL) {
                     const posX = x * this.tileSize + this.tileSize / 2;
                     const posY = y * this.tileSize + this.tileSize / 2;
-                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.wallBlockColor, 0.5);
+                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.worldColors.wallColor, 0.5);
                     this.wallGroup.add(wall);
                 }
             }
@@ -224,7 +226,7 @@ export class Game extends Scene {
             const posX = xCenter * this.tileSize + this.tileSize / 2;
             const posY = yCenter * this.tileSize + this.tileSize / 2;
 
-            const wall = this.add.rectangle(posX, posY, widthPixels, heightPixels, this.wallBlockColor);
+            const wall = this.add.rectangle(posX, posY, widthPixels, heightPixels, this.worldColors.wallColor);
 
             this.wallGroup.add(wall);
         }
@@ -247,7 +249,7 @@ export class Game extends Scene {
             -extraSize / 2,    // на -500 по Y
             mapPixelWidth + extraSize * 2, // шире карты
             extraSize,
-            this.wallBlockColor
+            this.worldColors.wallColor
         );
         this.wallGroup.add(topWall);
 
@@ -257,7 +259,7 @@ export class Game extends Scene {
             mapPixelHeight + extraSize / 2, // ниже карты
             mapPixelWidth + extraSize * 2,
             extraSize,
-            this.wallBlockColor
+            this.worldColors.wallColor
         );
         this.wallGroup.add(bottomWall);
 
@@ -267,7 +269,7 @@ export class Game extends Scene {
             mapPixelHeight / 2,
             extraSize,
             mapPixelHeight + extraSize * 2,
-            this.wallBlockColor
+            this.worldColors.wallColor
         );
         this.wallGroup.add(leftWall);
 
@@ -277,7 +279,7 @@ export class Game extends Scene {
             mapPixelHeight / 2,
             extraSize,
             mapPixelHeight + extraSize * 2,
-            this.wallBlockColor
+            this.worldColors.wallColor
         );
         this.wallGroup.add(rightWall);
     }
@@ -506,6 +508,7 @@ export class Game extends Scene {
             titleText,
             { fontFamily: 'Courier New', fontStyle: "bold", fontSize: 40 }
         );
+        titleTextObject.setDepth(2);
 
         const musicText = "Destructo20 - " + this.soundManager.getTrackName();
         const musicTextObject: Phaser.GameObjects.Text = this.add.text(
@@ -514,6 +517,7 @@ export class Game extends Scene {
             musicText,
             { fontFamily: 'Courier New', fontSize: 26 }
         );
+        musicTextObject.setDepth(2);
 
         setTimeout(() => {
             this.tweens.add({
