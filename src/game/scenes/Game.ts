@@ -4,7 +4,7 @@ import { PathNode, PathNodeType } from '../../gen/path';
 import SoundManager from '../../util/SoundManager';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { getRandomWorldColors, WorldColors } from '../../util/worldColorGeneration';
-import { fadeFromBlack } from '../../util/ui';
+import { fadeFromBlack, fadeToBlack } from '../../util/ui';
 
 export class Game extends Scene {
     private soundManager: SoundManager;
@@ -299,6 +299,10 @@ export class Game extends Scene {
             if (!this.endState) {
                 this.endState = true;
                 this.soundManager.stopSoundsAndPlayWin();
+                fadeToBlack(this, 1000, () => {
+                    this.scene.start("MainMenu");
+                    this.scene.stop("Game");
+                });
             }
         });
     }

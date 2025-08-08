@@ -41,8 +41,8 @@ export function fadeToBlack(
     onComplete?: () => void
 ): Phaser.Tweens.Tween {
     // Создаем Render Texture на весь экран
-    const rt = scene.add.renderTexture(0, 0, scene.sys.game.scale.gameSize.width, scene.sys.game.scale.gameSize.height)
-        .setOrigin(0)
+    const rt = scene.add.renderTexture(0, 0, scene.sys.game.scale.gameSize.width * 3, scene.sys.game.scale.gameSize.height * 3)
+        .setOrigin(0.5)
         .setDepth(9999)
         .setScrollFactor(0)
         .setAlpha(0) // Начинаем с прозрачного

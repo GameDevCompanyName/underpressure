@@ -1,6 +1,7 @@
 import { Scene, GameObjects } from 'phaser';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { createButton, fadeFromBlack, fadeToBlack } from '../../util/ui';
+import { Game } from './Game';
 
 export class MainMenu extends Scene
 {
