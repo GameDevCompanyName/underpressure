@@ -44,7 +44,7 @@ export default class SoundManager {
 
     initGameInstances() {
         this.thrustSound = this.scene.sound.add(SOUNDS.THRUST, { loop: true, volume: 0.2 });
-        this.caveAmbience = this.scene.sound.add(SOUNDS.CAVE, { loop: true, volume: 0.2 });
+        this.caveAmbience = this.scene.sound.add(SOUNDS.CAVE, { loop: true, volume: 0.1 });
         this.death = this.scene.sound.add(SOUNDS.DEATH, { loop: false, volume: 0.5 });
         this.win = this.scene.sound.add(SOUNDS.WIN, { loop: false, volume: 0.5 });
         this.soundtrack = this.scene.sound.add(this.soundtrackValue, { loop: true, volume: 1 });

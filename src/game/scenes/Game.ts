@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import { generateWorld, World, WorldCell } from '../../gen/common';
+import { generateWorld, WallBlock, World, WorldCell, WorldSegment } from '../../gen/common';
 import { PathNode, PathNodeType } from '../../gen/path';
 import SoundManager from '../../util/SoundManager';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
@@ -7,6 +7,10 @@ import { getRandomWorldColors, WorldColors } from '../../util/worldColorGenerati
 import { fadeFromBlack, fadeToBlack } from '../../util/ui';
 
 export class Game extends Scene {
+    private DEBUG = false;
+
+    private debugGraphics: Phaser.GameObjects.Graphics | null = null;
+
     private soundManager: SoundManager;
 
     private raycasterPlugin: PhaserRaycaster;
@@ -39,7 +43,7 @@ export class Game extends Scene {
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
     private visionGradient: Phaser.GameObjects.Image;
 
-    private readonly FUEL_MAX = 200;
+    private readonly FUEL_MAX = 200 + (this.DEBUG ? 2000 : 0);
     private readonly FUEL_CONSUMPTION_BASE = 10;
     private readonly REFUEL_RATE = 0.2;
 
@@ -48,11 +52,17 @@ export class Game extends Scene {
     private winState: boolean;
     private loseState: boolean;
 
-    private readonly MIN_ZOOM = 0.5;
-    private readonly MAX_ZOOM = 0.6;
+    private readonly MIN_ZOOM = this.DEBUG ? 0.3 : 0.5;
+    private readonly MAX_ZOOM = this.DEBUG ? 0.3 : 0.45;
     private readonly MAX_SPEED = 600;
 
     private fuel: number;
+    
+    private lightRefreshDeltaSum = 0;
+
+    private wallInstances: Map<number, Phaser.GameObjects.Rectangle>;
+    private addedWallBlocks: Map<number, boolean>;
+    private currentActiveSegment: WorldSegment;
 
     constructor() {
         super('Game');
@@ -87,24 +97,37 @@ export class Game extends Scene {
         this.soundManager.playMusic();
 
         this.world = generateWorld();
+        this.addedWallBlocks = new Map();
+        this.wallInstances = new Map();
+        this.currentActiveSegment = this.world.startSegment;
 
         this.worldColors = getRandomWorldColors();
 
+
+        if (this.DEBUG) {
+            this.drawDebugSegmentBorders(this.world.segments);
+        }
+
         this.wallGroup = this.physics.add.staticGroup();
-        // this.createWalls();
         this.createWallBlocks();
-        // this.drawPolygons();
         this.createPlayer();
         this.addStartPlatform();
         this.addEndPlatform();
         this.addRefuelPlatformsForIntermediateNodes();
         this.setupCamera();
-        this.setupVisionGradient();
+        if (!this.DEBUG) {
+            this.setupVisionGradient();
+        }
         this.createUI();
         this.setupControls();
         this.setupWorldBounds();
         this.setupFadingText(1);
+        this.setupShadows();
 
+        fadeFromBlack(this, 1000);
+    }
+
+    private setupShadows() {
         this.raycaster = this.raycasterPlugin.createRaycaster();
         this.ray = this.raycaster.createRay({
             origin: {
@@ -113,34 +136,44 @@ export class Game extends Scene {
             },
             detectionRange: this.VISION
         });
-        this.raycaster.mapGameObjects(this.wallGroup.getChildren());
+        this.setupShadowCasting();
         //cast ray in all directions
         this.intersections = this.ray.castCircle();
         this.someGraphics = this.add.graphics({ lineStyle: { width: 1, color: 0x00ff00 }, fillStyle: { color: 0xffffff, alpha: 0.3 } });
         // this.someGraphics.setDepth(2);
-
-        fadeFromBlack(this, 1000);
     }
 
-    private deltaSum = 0;
+    private clearShadowCasting() {
+        if (!this.DEBUG) {
+            this.raycaster.removeMappedObjects(this.wallGroup.getChildren());
+        }
+    }
+
+    private setupShadowCasting() {
+        if (!this.DEBUG) {
+            this.raycaster.mapGameObjects(this.wallGroup.getChildren());
+        }
+    }
 
     update(time: number, delta: number) {
         this.handlePlayerMovement(delta);
         this.handleRefuel(delta);
-        // this.updateSpeedText();
+        this.handleSegmentLoadUnloading({ x: this.player.x / this.tileSize, y: this.player.y / this.tileSize })
         this.updateCameraZoom();
 
-        if (this.deltaSum > 50) {
+        if (this.lightRefreshDeltaSum > 30) {
             this.ray.setOrigin(this.player.x, this.player.y);
             this.intersections = this.ray.castCircle();
             this.redrawLight();
-            this.deltaSum = 0;
+            this.lightRefreshDeltaSum = 0;
         } else {
-            this.deltaSum += delta;
+            this.lightRefreshDeltaSum += delta;
         }
 
         this.updateFuelBar();
-        this.visionGradient.setPosition(this.player.x, this.player.y);
+        if (!this.DEBUG) {
+            this.visionGradient.setPosition(this.player.x, this.player.y);
+        }
     }
 
     private setupVisionGradient() {
@@ -152,7 +185,6 @@ export class Game extends Scene {
         const y = this.player.y;
         const radiusStart = this.VISION * 0.4;
         const radiusEnd = this.VISION;
-        const gradientColor = 0x000000;
 
         // Создаем текстуру для градиента
         const texture = this.textures.createCanvas('visionGradient', window.innerWidth, window.innerHeight)!;
@@ -200,61 +232,202 @@ export class Game extends Scene {
         this.cameras.resize(width, height);
     }
 
-    // private drawPolygons(): void {
-    //     for (const polygon of this.world.approxPolygons) {
-    //         if (polygon.length < 3) continue; // пропускаем слишком маленькие полигоны
-
-    //         const graphics = this.add.graphics();
-    //         graphics.fillStyle(this.polygonColor, 0.5);
-    //         graphics.beginPath();
-
-    //         const [first, ...rest] = polygon;
-
-    //         graphics.moveTo(first.x * this.tileSize, first.y * this.tileSize);
-    //         for (const point of rest) {
-    //             graphics.lineTo(point.x * this.tileSize, point.y * this.tileSize);
-    //         }
-
-    //         graphics.closePath();
-    //         graphics.fillPath();
-
-    //         this.wallGroup.add(graphics);
-    //     }
-    // }
-
-    private createWalls(): void {
-        for (let y = 0; y < this.world.height; y++) {
-            for (let x = 0; x < this.world.width; x++) {
-                if (this.world.map[y][x] === WorldCell.WALL) {
-                    const posX = x * this.tileSize + this.tileSize / 2;
-                    const posY = y * this.tileSize + this.tileSize / 2;
-                    const wall = this.add.rectangle(posX, posY, this.tileSize, this.tileSize, this.worldColors.wallColor, 0.5);
-                    this.wallGroup.add(wall);
-                }
-            }
-        }
-    }
-
     private createWallBlocks(): void {
         this.addExtraWallsAround();
         // create 4 walls - one from -1000 to (width + 1000) and from 0 to 1000 height
         // i need this walls to fully surround map with walls, so that player does not see the empty world arround
 
-        for (const block of this.world.optimisedWallBlocks) {
-            const widthCoords = block.rightBottom.x - block.leftTop.x;
-            const widthPixels = (widthCoords + 1) * this.tileSize;
-            const heightCoords = block.rightBottom.y - block.leftTop.y;
-            const heightPixels = (heightCoords + 1) * this.tileSize;
+        // Получаем все релевантные сегменты
+        const relevantSegments = [
+            this.world.startSegment,
+            ...this.world.startSegment.neighbours
+        ];
 
-            const xCenter = (block.rightBottom.x + block.leftTop.x) / 2;
-            const yCenter = (block.rightBottom.y + block.leftTop.y) / 2;
+        // Добавляем стены из всех релевантных сегментов
+        for (const segment of relevantSegments) {
+            for (const block of segment.blocks) {
+                this.addWallBlock(block);
+            }
+        }
+    }
 
-            const posX = xCenter * this.tileSize + this.tileSize / 2;
-            const posY = yCenter * this.tileSize + this.tileSize / 2;
+    private handleSegmentLoadUnloading(playerPosition: Point) {
+        // 1. Проверяем, находится ли игрок в текущем активном сегменте
+        if (this.isPointInSegment(playerPosition, this.currentActiveSegment)) {
+            return; // Игрок остался в том же сегменте - ничего не делаем
+        }
 
-            const wall = this.add.rectangle(posX, posY, widthPixels, heightPixels, this.worldColors.wallColor);
+        this.clearShadowCasting();
 
-            this.wallGroup.add(wall);
+        // 2. Ищем новый активный сегмент среди соседей
+        const newActiveSegment = this.findSegmentForPoint(playerPosition, [
+            this.currentActiveSegment,
+            ...this.currentActiveSegment.neighbours
+        ]);
+
+        if (!newActiveSegment) {
+            console.warn("Player moved to segment that is not adjacent to current active segment");
+            return;
+        }
+
+        // 3. Определяем сегменты, которые нужно выгрузить (те, что не соседи нового активного сегмента)
+        const segmentsToUnload = this.getSegmentsToUnload(newActiveSegment);
+
+        // 4. Определяем сегменты, которые нужно загрузить (новые соседи)
+        const segmentsToLoad = this.getSegmentsToLoad(newActiveSegment);
+
+        // 5. Выгружаем ненужные сегменты
+        for (const segment of segmentsToUnload) {
+            this.unloadSegment(segment);
+        }
+
+        // 6. Загружаем новые сегменты
+        for (const segment of segmentsToLoad) {
+            this.loadSegment(segment);
+        }
+
+        // 7. Обновляем текущий активный сегмент
+        this.currentActiveSegment = newActiveSegment;
+        this.setupShadowCasting();
+    }
+
+    // Вспомогательные методы:
+
+    private isPointInSegment(point: Point, segment: WorldSegment): boolean {
+        return point.x >= segment.leftX &&
+            point.x < segment.rightX &&
+            point.y >= segment.topY &&
+            point.y < segment.bottomY;
+    }
+
+    private findSegmentForPoint(point: Point, segments: WorldSegment[]): WorldSegment | null {
+        for (const segment of segments) {
+            if (this.isPointInSegment(point, segment)) {
+                return segment;
+            }
+        }
+        return null;
+    }
+
+    private getSegmentsToUnload(newActiveSegment: WorldSegment): WorldSegment[] {
+        const currentNeighbors = new Set([
+            this.currentActiveSegment,
+            ...this.currentActiveSegment.neighbours
+        ]);
+
+        const newNeighbors = new Set([
+            newActiveSegment,
+            ...newActiveSegment.neighbours
+        ]);
+
+        // Находим сегменты, которые были загружены, но не должны быть
+        return Array.from(currentNeighbors).filter(
+            segment => !newNeighbors.has(segment)
+        );
+    }
+
+    private getSegmentsToLoad(newActiveSegment: WorldSegment): WorldSegment[] {
+        const currentNeighbors = new Set([
+            this.currentActiveSegment,
+            ...this.currentActiveSegment.neighbours
+        ]);
+
+        const newNeighbors = [
+            newActiveSegment,
+            ...newActiveSegment.neighbours
+        ];
+
+        // Находим сегменты, которые нужно загрузить (еще не загружены)
+        return newNeighbors.filter(
+            segment => !currentNeighbors.has(segment)
+        );
+    }
+
+    private unloadSegment(segment: WorldSegment): void {
+        console.log(`Unloading segment ${segment.id}`);
+
+        for (const block of segment.blocks) {
+            if (!this.isBlockUsedInOtherSegments(block, segment)) {
+                this.removeWallBlock(block);
+            }
+        }
+    }
+
+    private loadSegment(segment: WorldSegment): void {
+        console.log("loaded segment: " + segment.id);
+        for (const block of segment.blocks) {
+            this.addWallBlock(block);
+        }
+    }
+
+    private isBlockUsedInOtherSegments(block: WallBlock, excludeSegment: WorldSegment): boolean {
+        const loadedSegments = [
+            this.currentActiveSegment,
+            ...this.currentActiveSegment.neighbours
+        ].filter(s => s.id !== excludeSegment.id);
+
+        return loadedSegments.some(segment =>
+            segment.blocks.some(b => b.id === block.id)
+        );
+    }
+
+    /**
+    * Добавляет стену в мир, если она еще не была добавлена
+    * @param block - блок стены для добавления
+    */
+    private addWallBlock(block: WallBlock): void {
+        // Проверяем, не добавлена ли уже эта стена
+        if (this.addedWallBlocks.has(block.id)) {
+            return;
+        }
+
+        // Вычисляем параметры стены
+        const widthCoords = block.rightBottom.x - block.leftTop.x;
+        const widthPixels = (widthCoords + 1) * this.tileSize;
+        const heightCoords = block.rightBottom.y - block.leftTop.y;
+        const heightPixels = (heightCoords + 1) * this.tileSize;
+
+        const xCenter = (block.rightBottom.x + block.leftTop.x) / 2;
+        const yCenter = (block.rightBottom.y + block.leftTop.y) / 2;
+
+        const posX = xCenter * this.tileSize + this.tileSize / 2;
+        const posY = yCenter * this.tileSize + this.tileSize / 2;
+
+        // Создаем графический объект стены
+        const wall = this.add.rectangle(
+            posX,
+            posY,
+            widthPixels,
+            heightPixels,
+            this.worldColors.wallColor
+        );
+
+        // Добавляем стену в группу и сохраняем ссылку
+        this.wallGroup.add(wall);
+        this.wallInstances.set(block.id, wall);
+        this.addedWallBlocks.set(block.id, true);
+    }
+
+    /**
+     * Удаляет стену из мира
+     * @param block - блок стены для удаления
+     */
+    private removeWallBlock(block: WallBlock): void {
+        // Проверяем, существует ли стена
+        if (!this.addedWallBlocks.has(block.id)) {
+            return;
+        }
+
+        // Получаем экземпляр стены
+        const wallInstance = this.wallInstances.get(block.id);
+        if (wallInstance) {
+            this.wallGroup.remove(wallInstance);
+            // Удаляем графический объект
+            wallInstance.destroy();
+
+            // Удаляем из коллекций
+            this.wallInstances.delete(block.id);
+            this.addedWallBlocks.delete(block.id);
         }
     }
 
@@ -401,7 +574,7 @@ export class Game extends Scene {
 
     private setupPlayerCollisions(player: Phaser.GameObjects.Rectangle): void {
         this.physics.add.collider(player, this.wallGroup, () => {
-            if (!this.winState && !this.loseState) {
+            if (!this.winState && !this.loseState && !this.DEBUG) {
                 this.loseState = true;
                 this.soundManager.stopSoundsAndPlayDeath();
                 fadeToBlack(this, 1000, () => {
@@ -410,6 +583,28 @@ export class Game extends Scene {
                 });
             }
         });
+    }
+
+    private drawDebugSegmentBorders(segments: WorldSegment[]): void {
+        if (!this.debugGraphics) {
+            this.debugGraphics = this.add.graphics();
+            this.debugGraphics.depth = 1000;
+        }
+
+        this.debugGraphics.clear();
+
+        // Ярко-красный цвет с полной непрозрачностью
+        this.debugGraphics.lineStyle(8, 0xffFFFF, 1.0);
+
+        for (const segment of segments) {
+            const left = segment.leftX * this.tileSize;
+            const right = segment.rightX * this.tileSize;
+            const top = segment.topY * this.tileSize;
+            const bottom = segment.bottomY * this.tileSize;
+
+            // Рисуем прямоугольник (все 4 стороны)
+            this.debugGraphics.strokeRect(left, top, right - left, bottom - top);
+        }
     }
 
     private createUI(): void {

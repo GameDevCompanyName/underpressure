@@ -1,3 +1,4 @@
+import { getNextUniqueId } from "../util/common";
 import { WorldMap, Polygon, WallBlock, WorldCell } from "./common";
 
 export function distance(from: Point, to: Point) {
@@ -154,6 +155,7 @@ export function getOptimisedWallBlocks(map: WorldMap): WallBlock[] {
 
             // Добавим прямоугольник в результат
             blocks.push({
+                id: getNextUniqueId(),
                 leftTop: { x, y },
                 rightBottom: { x: x + maxWidth - 1, y: y + maxHeight - 1 },
             });
@@ -197,6 +199,7 @@ export function refineWallBlocks(blocks: WallBlock[]): WallBlock[] {
                     const leftX = Math.min(a.leftTop.x, b.leftTop.x);
                     const rightX = Math.max(a.rightBottom.x, b.rightBottom.x);
                     const mergedBlock: WallBlock = {
+                        id: getNextUniqueId(),
                         leftTop: { x: leftX, y: a.leftTop.y },
                         rightBottom: { x: rightX, y: a.rightBottom.y },
                     };
@@ -216,6 +219,7 @@ export function refineWallBlocks(blocks: WallBlock[]): WallBlock[] {
                     const topY = Math.min(a.leftTop.y, b.leftTop.y);
                     const bottomY = Math.max(a.rightBottom.y, b.rightBottom.y);
                     const mergedBlock: WallBlock = {
+                        id: getNextUniqueId(),
                         leftTop: { x: a.leftTop.x, y: topY },
                         rightBottom: { x: a.rightBottom.x, y: bottomY },
                     };

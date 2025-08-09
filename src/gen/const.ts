@@ -1,4 +1,5 @@
 export const WORLD_PADDING = 10;
+export const WORLD_SEGMENT_SIZE = 50;
 
 // PATH GENERATION
 export const AVERAGE_NODE_DISTANCE = 30;

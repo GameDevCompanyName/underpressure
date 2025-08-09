@@ -1,10 +1,22 @@
+import { getNextUniqueId } from "../util/common";
 import { createRandomFiller, createSmoothingRule, generateWithNoiseCaves, smoothIterations } from "./caves";
+import { WORLD_SEGMENT_SIZE } from "./const";
 import { clearEdgesCells, clearNodeCells, generatePathInfo, WorldPathInfo } from "./path";
 import { clearUnreachableWalls, deepCopyArray, fillFakeWalls, getOptimisedWallBlocks, refineWallBlocks } from "./util";
 
 export enum WorldCell {
     WALL,
     EMPTY
+}
+
+export interface WorldSegment {
+    id: number;
+    leftX: number;
+    rightX: number;
+    topY: number;
+    bottomY: number;
+    blocks: WallBlock[];
+    neighbours: WorldSegment[];
 }
 
 export type WorldMap = WorldCell[][];
@@ -15,6 +27,8 @@ export interface World {
     map: WorldMap;
     pathInfo: WorldPathInfo;
     optimisedWallBlocks: WallBlock[];
+    segments: WorldSegment[];
+    startSegment: WorldSegment;
 }
 
 export interface Point {
@@ -25,13 +39,14 @@ export interface Point {
 export type Polygon = Point[];
 
 export interface WallBlock {
+    id: number;
     leftTop: Point;
     rightBottom: Point;
 }
 
 export function generateWorld(): World {
-    const height: number = 400;
-    const width: number = 600;
+    const height: number = 600;
+    const width: number = 1200;
 
     // let map = generateFilledMap(height, width);
 
@@ -71,12 +86,17 @@ export function generateWorld(): World {
     const refinedWalls = refineWallBlocks(optimisedWallBlocks);
     console.log("refined walls : " + optimisedWallBlocks.length);
 
+    let segments: WorldSegment[] = divideBlocksInSegments(width, height, optimisedWallBlocks, WORLD_SEGMENT_SIZE);
+    let startSegment: WorldSegment = getStartSegment(segments, pathInfo.nodes[0].coords);
+
     return {
         height,
         width,
         map,
         pathInfo,
-        optimisedWallBlocks: refinedWalls
+        optimisedWallBlocks: refinedWalls,
+        segments,
+        startSegment
     };
 }
 
@@ -169,4 +189,96 @@ export function pathSin(
     return Math.sin(
         (x - padding_x) / freq
     ) * amp + height / 2;
+}
+
+function divideBlocksInSegments(
+    width: number,
+    height: number,
+    optimisedWallBlocks: WallBlock[],
+    segmentSize: number
+): WorldSegment[] {
+    // Вычисляем количество сегментов
+    const segmentsX = Math.ceil(width / segmentSize);
+    const segmentsY = Math.ceil(height / segmentSize);
+
+    // Создаем матрицу сегментов
+    const segmentMatrix: WorldSegment[][] = Array(segmentsY)
+        .fill(null)
+        .map(() => Array(segmentsX).fill(null));
+
+    // Инициализация сегментов
+    for (let y = 0; y < segmentsY; y++) {
+        for (let x = 0; x < segmentsX; x++) {
+            segmentMatrix[y][x] = {
+                id: getNextUniqueId(),
+                leftX: x * segmentSize,
+                rightX: Math.min((x + 1) * segmentSize, width),
+                topY: y * segmentSize,
+                bottomY: Math.min((y + 1) * segmentSize, height),
+                blocks: [],
+                neighbours: []
+            };
+        }
+    }
+
+    // Распределение блоков по сегментам
+    for (const block of optimisedWallBlocks) {
+        // Определяем границы блока
+        const blockLeft = block.leftTop.x;
+        const blockRight = block.rightBottom.x;
+        const blockTop = block.leftTop.y;
+        const blockBottom = block.rightBottom.y;
+
+        // Находим индексы сегментов, которые пересекает блок
+        const firstSegX = Math.floor(blockLeft / segmentSize);
+        const lastSegX = Math.floor((blockRight) / segmentSize);
+        const firstSegY = Math.floor(blockTop / segmentSize);
+        const lastSegY = Math.floor((blockBottom) / segmentSize);
+
+        // Добавляем блок во все пересекаемые сегменты
+        for (let y = firstSegY; y <= lastSegY; y++) {
+            for (let x = firstSegX; x <= lastSegX; x++) {
+                if (y >= 0 && y < segmentsY && x >= 0 && x < segmentsX) {
+                    segmentMatrix[y][x].blocks.push(block);
+                }
+            }
+        }
+    }
+
+    // Находим соседей для каждого сегмента
+    for (let y = 0; y < segmentsY; y++) {
+        for (let x = 0; x < segmentsX; x++) {
+            const current = segmentMatrix[y][x];
+
+            // Проверяем все 8 направлений
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+
+                    const nx = x + dx;
+                    const ny = y + dy;
+
+                    if (nx >= 0 && nx < segmentsX && ny >= 0 && ny < segmentsY) {
+                        current.neighbours.push(segmentMatrix[ny][nx]);
+                    }
+                }
+            }
+        }
+    }
+
+    // Преобразуем матрицу в плоский массив
+    return segmentMatrix.flat();
+}
+
+export function getStartSegment(segments: WorldSegment[], startPoint: Point): WorldSegment {
+    for (const segment of segments) {
+        if (startPoint.x >= segment.leftX &&
+            startPoint.x < segment.rightX &&
+            startPoint.y >= segment.topY &&
+            startPoint.y < segment.bottomY) {
+            return segment;
+        }
+    }
+
+    throw new Error("Start point is not inside any segment");
 }
