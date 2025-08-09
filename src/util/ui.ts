@@ -8,6 +8,21 @@ export enum UI_COLOR {
     BG_DARK = 0x0B2545
 }
 
+export function createText(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    text: string
+): Phaser.GameObjects.Text {
+    return scene.add.text(x, y, text, {
+        fontSize: '20px',
+        fontFamily: 'Courier New',
+        fontStyle: "bold",
+        color: numToCssHex(UI_COLOR.SURFACE),
+        wordWrap: {width: 400, useAdvancedWrap: true}
+    }).setOrigin(0.5);
+}
+
 export function createButton(
     scene: Phaser.Scene,
     x: number,

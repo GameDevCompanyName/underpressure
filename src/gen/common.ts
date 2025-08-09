@@ -44,23 +44,7 @@ export interface WallBlock {
     rightBottom: Point;
 }
 
-export function generateWorld(): World {
-    const height: number = 600;
-    const width: number = 1200;
-
-    // let map = generateFilledMap(height, width);
-
-    // map = clearSinPath(
-    //     map,
-    //     height,
-    //     width,
-    //     10,
-    //     10,
-    //     25,
-    //     20,
-    //     0.5
-    // );
-
+export function generateWorld(width: number, height: number, difficulty: number): World {
     let map = generateWithNoiseCaves(
         height,
         width

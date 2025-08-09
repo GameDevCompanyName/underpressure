@@ -5,6 +5,7 @@ import SoundManager from '../../util/SoundManager';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { getRandomWorldColors, WorldColors } from '../../util/worldColorGeneration';
 import { fadeFromBlack, fadeToBlack } from '../../util/ui';
+import { LevelInfo, LevelManager } from '../../util/LevelManager';
 
 export class Game extends Scene {
     private DEBUG = false;
@@ -33,6 +34,8 @@ export class Game extends Scene {
     private lightColor = 0x999999;
     private engineLightColor = 0xBBAAAA;
 
+    private levelManager: LevelManager;
+    private levelInfo: LevelInfo;
     private wallGroup: Phaser.Physics.Arcade.StaticGroup;
     private world: World;
 
@@ -83,9 +86,11 @@ export class Game extends Scene {
     preload() {
         this.soundManager = new SoundManager(this);
         this.soundManager.preloadGameSounds();
+        this.levelManager = new LevelManager();
     }
 
     create() {
+        this.levelInfo = this.levelManager.getCurrentLevelInfo();
         this.winState = false;
         this.loseState = false;
         this.isRefueling = false;
@@ -96,13 +101,13 @@ export class Game extends Scene {
         this.soundManager.startCaveAmbience();
         this.soundManager.playMusic();
 
-        this.world = generateWorld();
+        this.world = generateWorld(this.levelInfo.width, this.levelInfo.height, this.levelInfo.difficulty);
         this.addedWallBlocks = new Map();
         this.wallInstances = new Map();
         this.currentActiveSegment = this.world.startSegment;
 
-        this.worldColors = getRandomWorldColors();
-
+        // this.worldColors = getRandomWorldColors();
+        this.worldColors = this.levelInfo.colors;
 
         if (this.DEBUG) {
             this.drawDebugSegmentBorders(this.world.segments);
@@ -495,8 +500,8 @@ export class Game extends Scene {
                 this.winState = true;
                 this.soundManager.stopSoundsAndPlayWin();
                 fadeToBlack(this, 1000, () => {
-                    this.scene.start("MainMenu");
-                    this.scene.stop("Game");
+                    this.levelManager.saveNextLevel();
+                    this.levelManager.launchCurrentLevelScene(this);
                 });
             }
         });
@@ -721,8 +726,8 @@ export class Game extends Scene {
         ));
     }
 
-    private setupFadingText(levelNumber: number) {
-        const titleText = "LEVEL " + levelNumber;
+    private setupFadingText() {
+        const titleText = "LEVEL " + this.levelInfo.level + ". " + this.levelInfo.name;
         const titleTextObject: Phaser.GameObjects.Text = this.add.text(
             this.player.x - WIDTH_PIXELS / 2,
             this.player.y + HEIGHT_PIXELS - 100,

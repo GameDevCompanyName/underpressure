@@ -1,4 +1,6 @@
-[
+import { CutsceneInfo } from "../../util/LevelManager";
+
+export const CUTSCENES: CutsceneInfo[] = [
   {
     "index": 0,
     "cutscenes": [
@@ -199,4 +201,4 @@
       }
     ]
   }
-]
+];
