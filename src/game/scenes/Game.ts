@@ -23,7 +23,7 @@ export class Game extends Scene {
     private VISION: number = 550;
 
     private tileSize = 10;
-    private playerSizeTiles = 3.5;
+    private playerSizeTiles = 3.8;
     private worldColors: WorldColors;
     private endPlatformColor = 0x22223B;
     private platformColor = 0x9A8C98;
@@ -40,7 +40,7 @@ export class Game extends Scene {
     private world: World;
 
     private cursors: Partial<Phaser.Types.Input.Keyboard.CursorKeys>;
-    private player: Phaser.GameObjects.Rectangle;
+    private player: Phaser.Physics.Arcade.Sprite;
     private speedText: Phaser.GameObjects.Text;
     private fuelBarBackground: Phaser.GameObjects.Rectangle;
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
@@ -49,6 +49,7 @@ export class Game extends Scene {
     private readonly FUEL_MAX = 200 + (this.DEBUG ? 2000 : 0);
     private readonly FUEL_CONSUMPTION_BASE = 10;
     private readonly REFUEL_RATE = 0.2;
+    private readonly PLAYER_SCALE = 1.5;
 
     private isRefueling: boolean;
     private isThrusting: boolean;
@@ -60,7 +61,7 @@ export class Game extends Scene {
     private readonly MAX_SPEED = 600;
 
     private fuel: number;
-    
+
     private lightRefreshDeltaSum = 0;
 
     private wallInstances: Map<number, Phaser.GameObjects.Rectangle>;
@@ -87,6 +88,8 @@ export class Game extends Scene {
         this.soundManager = new SoundManager(this);
         this.soundManager.preloadGameSounds();
         this.levelManager = new LevelManager();
+        this.load.image('gg', 'assets/gg.png');
+        this.load.image('gg_fly', 'assets/gg_fly.png');
     }
 
     create() {
@@ -126,7 +129,7 @@ export class Game extends Scene {
         this.createUI();
         this.setupControls();
         this.setupWorldBounds();
-        this.setupFadingText(1);
+        this.setupFadingText();
         this.setupShadows();
 
         fadeFromBlack(this, 1000);
@@ -162,6 +165,7 @@ export class Game extends Scene {
 
     update(time: number, delta: number) {
         this.handlePlayerMovement(delta);
+        this.updatePlayerTexture();
         this.handleRefuel(delta);
         this.handleSegmentLoadUnloading({ x: this.player.x / this.tileSize, y: this.player.y / this.tileSize })
         this.updateCameraZoom();
@@ -178,6 +182,20 @@ export class Game extends Scene {
         this.updateFuelBar();
         if (!this.DEBUG) {
             this.visionGradient.setPosition(this.player.x, this.player.y);
+        }
+    }
+
+    private updatePlayerTexture() {
+        // if (this.player.body?.velocity.x! < 0) {
+            // this.player.setScale(-this.PLAYER_SCALE, this.PLAYER_SCALE);
+        // } else {
+            // this.player.setScale(this.PLAYER_SCALE, this.PLAYER_SCALE);
+        // }
+
+        if (this.isThrusting) {
+            this.player.setTexture("gg_fly");
+        } else {
+            this.player.setTexture("gg");
         }
     }
 
@@ -540,7 +558,7 @@ export class Game extends Scene {
 
     private createPlayer(): void {
         const startPosition = this.getPlayerStartPosition();
-        this.player = this.createPlayerRectangle(startPosition);
+        this.player = this.createPlayerSprite(startPosition);
         this.configurePlayerPhysics(this.player);
         this.setupPlayerCollisions(this.player);
     }
@@ -555,20 +573,33 @@ export class Game extends Scene {
         );
     }
 
-    private createPlayerRectangle(position: Phaser.Math.Vector2): Phaser.GameObjects.Rectangle {
-        const player = this.add.rectangle(
+    private createPlayerSprite(position: Phaser.Math.Vector2): Phaser.Physics.Arcade.Sprite {
+        const size = this.tileSize * this.playerSizeTiles;
+
+        // Создаем спрайт
+        const player = this.physics.add.sprite(
             position.x,
-            position.y,
-            this.tileSize * this.playerSizeTiles,
-            this.tileSize * this.playerSizeTiles,
-            this.playerColor // Можно заменить на this.playerColor если хочешь
+            position.y - 30,
+            'gg' // Убедитесь, что текстура загружена в preload()
         );
 
-        this.physics.add.existing(player);
+        // Настройка отображения
+        player.setDisplaySize(size, size*1.1); // Растягиваем текстуру до нужного размера
+
+        // Точная настройка физического тела (критически важно!)
+        // player.body.setSize(size, size); // Размер коллайдера
+        player.body.setOffset(0, 0);     // Сброс смещения
+
+        // Центрирование (если нужно)
+        // player.setOrigin(0.5, 0.5);
+
+        // Для дебага можно включить отображение коллайдера
+        // this.debug.showBody(player, true);
+
         return player;
     }
 
-    private configurePlayerPhysics(player: Phaser.GameObjects.Rectangle): void {
+    private configurePlayerPhysics(player: Phaser.Physics.Arcade.Sprite): void {
         const body = player.body as Phaser.Physics.Arcade.Body;
         body.setCollideWorldBounds(true);
         body.setBounce(0);
@@ -577,7 +608,7 @@ export class Game extends Scene {
         body.setAllowGravity(true); // Если не нужен гравитационный эффект — выключи
     }
 
-    private setupPlayerCollisions(player: Phaser.GameObjects.Rectangle): void {
+    private setupPlayerCollisions(player: Phaser.Physics.Arcade.Sprite): void {
         this.physics.add.collider(player, this.wallGroup, () => {
             if (!this.winState && !this.loseState && !this.DEBUG) {
                 this.loseState = true;

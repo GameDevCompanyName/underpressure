@@ -16,7 +16,7 @@ const config: Phaser.Types.Core.GameConfig = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    backgroundColor: numToCssHex(UI_COLOR.BG_LIGHT),
+    backgroundColor: "#000000",
     scene: [MainMenu, MainGame, Cutscene],
     physics: {
         default: 'arcade',
