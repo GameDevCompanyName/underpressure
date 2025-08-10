@@ -23,7 +23,7 @@ export class Game extends Scene {
     private VISION: number = 550;
 
     private tileSize = 10;
-    private playerSizeTiles = 3.8;
+    private playerSizeTiles = 2.1;
     private worldColors: WorldColors;
     private endPlatformColor = 0x22223B;
     private platformColor = 0x9A8C98;
@@ -529,12 +529,12 @@ export class Game extends Scene {
         const { x, y } = node.coords;
 
         const posX = x * this.tileSize;
-        const posY = y * this.tileSize + (this.tileSize * this.playerSizeTiles) / 2;
+        const posY = y * this.tileSize + (this.tileSize * this.playerSizeTiles);
 
         const platform = this.add.rectangle(
             posX,
             posY + 5, // немного ниже центра игрока
-            this.tileSize * this.playerSizeTiles,
+            this.tileSize * this.playerSizeTiles * 1.5,
             10,
             this.endPlatformColor
         );
@@ -584,7 +584,7 @@ export class Game extends Scene {
         );
 
         // Настройка отображения
-        player.setDisplaySize(size, size*1.1); // Растягиваем текстуру до нужного размера
+        player.setDisplaySize(size, size * 1.9); // Растягиваем текстуру до нужного размера
 
         // Точная настройка физического тела (критически важно!)
         // player.body.setSize(size, size); // Размер коллайдера
@@ -644,7 +644,7 @@ export class Game extends Scene {
     }
 
     private createUI(): void {
-        const barWidth = this.tileSize * this.playerSizeTiles * 1.5;
+        const barWidth = this.tileSize * 5;
         const barHeight = 10;
 
         this.fuelBarBackground = this.add.rectangle(0, 0, barWidth, barHeight, this.barBGcolor, 0.7);
@@ -713,7 +713,7 @@ export class Game extends Scene {
         const barX = this.player.x;
 
         // Позиция по Y под игроком — как было, чуть ниже
-        const barY = this.player.y + this.tileSize * this.playerSizeTiles;
+        const barY = this.player.y + this.tileSize * 4;
 
         const fuelRatio = Phaser.Math.Clamp(this.fuel / this.FUEL_MAX, 0, 1);
 
