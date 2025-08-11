@@ -21,7 +21,7 @@ export class MainMenu extends Scene {
 
         this.cameras.main.setBackgroundColor(UI_COLOR.BG_LIGHT);
 
-        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, 'Начать', () => this.transitionToGame());
+        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, 'Start', () => this.transitionToGame());
         createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 10, 'Рекорды', () => { });
         createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 80, 'Стереть сохранение', () => {
             this.levelManager.initClearSave();

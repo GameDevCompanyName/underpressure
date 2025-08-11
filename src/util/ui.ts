@@ -16,8 +16,9 @@ export function createText(
 ): Phaser.GameObjects.Text {
     return scene.add.text(x, y, text, {
         fontSize: '20px',
-        fontFamily: 'Courier New',
-        fontStyle: "bold",
+        fontFamily: 'pixelizer',
+        strokeThickness: 2,
+        stroke: numToCssHex(UI_COLOR.BG_DARK),
         color: numToCssHex(UI_COLOR.SURFACE),
         wordWrap: {width: 400, useAdvancedWrap: true}
     }).setOrigin(0.5);
@@ -31,9 +32,7 @@ export function createButton(
     onClick: () => void
 ) {
     const buttonText = scene.add.text(0, 0, text, {
-        fontSize: '26px',
-        fontFamily: 'Courier New',
-        fontStyle: "bold",
+        font: '18px sonic',
         color: numToCssHex(UI_COLOR.SURFACE),
     }).setOrigin(0.5);
 

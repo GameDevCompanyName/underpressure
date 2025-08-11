@@ -1,8 +1,15 @@
+@font-face {
+    font-family: "pixelizer", sans-serif;
+    src: url(./assets/pixelizer.woff) format('woff'),
+         url(./assets/pixelizer.woff2) format('woff2'); 
+}
+
 body {
     margin: 0;
     padding: 0;
     color: rgba(255, 255, 255, 0.87);
     background-color: #0f0f0f;
+    font-family: "pixelizer", sans-serif;
 }
 
 #app {

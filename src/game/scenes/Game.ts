@@ -775,7 +775,7 @@ export class Game extends Scene {
             this.player.x - WIDTH_PIXELS / 2,
             this.player.y + HEIGHT_PIXELS - 100,
             titleText,
-            { fontFamily: 'Courier New', fontStyle: "bold", fontSize: 40 }
+            { fontFamily: 'pixelizer', fontStyle: "bold", fontSize: 40 }
         );
         titleTextObject.setDepth(2);
 
@@ -784,7 +784,7 @@ export class Game extends Scene {
             this.player.x - WIDTH_PIXELS / 2,
             this.player.y + HEIGHT_PIXELS - 50,
             musicText,
-            { fontFamily: 'Courier New', fontSize: 26 }
+            { fontFamily: 'pixelizer', fontSize: 26 }
         );
         musicTextObject.setDepth(2);
 
