@@ -1,5 +1,5 @@
 import { applyRuleToAllButEdges, applyRuleToCoords, WorldMap, World, WorldCell } from "./common";
-import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, MAX_EDGE_AMP, MAX_EDGE_FREQ, MAX_EDGE_WIDTH, MIN_EDGE_AMP, MIN_EDGE_FREQ, MIN_EDGE_WIDTH, PATH_WIDTH_DEVIATION, REFUEL_PLATRORM_BASE_P, WORLD_PADDING } from "./const";
+import { AVERAGE_NODE_DIAMETER, AVERAGE_NODE_DISTANCE, FUEL_DISTANCE, MAX_EDGE_AMP, MAX_EDGE_FREQ, MAX_EDGE_WIDTH, MIN_EDGE_AMP, MIN_EDGE_FREQ, MIN_EDGE_WIDTH, PATH_WIDTH_DEVIATION, REFUEL_PLATRORM_BASE_P, WORLD_PADDING } from "./const";
 import { distance, randomInRange } from "./util";
 
 export interface PathNode {
@@ -43,12 +43,18 @@ export function generatePathInfo(map: WorldMap): WorldPathInfo {
     for (let i = 0; i < count; i++) {
         const currentX = Math.floor(WORLD_PADDING + distanceX * i + distanceX / 2);
         const currentY = Math.floor(WORLD_PADDING + innerHeight * Math.random());
-        
+
         let type: PathNodeType;
         switch (i) {
-            case 0: type = PathNodeType.START;
-            case count - 1: type = PathNodeType.END;
+            case 0: type = PathNodeType.START; break;
+            case count - 1: type = PathNodeType.END; break;
             default: {
+                let dist = distance({x: currentX, y: currentY}, prevNode!.coords);
+                if (dist > FUEL_DISTANCE / 2) {
+                    let closenessToLimit = dist / FUEL_DISTANCE;
+                    refuelProbability = (refuelProbability + closenessToLimit) / 2;
+                    refuelProbability = Math.min(refuelProbability, 1);
+                }
                 if (Math.random() < refuelProbability) {
                     type = PathNodeType.REFUEL;
                     refuelProbability = REFUEL_PLATRORM_BASE_P;

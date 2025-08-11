@@ -11,4 +11,5 @@ export const MAX_EDGE_AMP = 9;
 export const MIN_EDGE_WIDTH = 5;
 export const MAX_EDGE_WIDTH = 10;
 export const PATH_WIDTH_DEVIATION = 0.7;
-export const REFUEL_PLATRORM_BASE_P = 0.3;
+export const REFUEL_PLATRORM_BASE_P = 0.10;
+export const FUEL_DISTANCE = 300;

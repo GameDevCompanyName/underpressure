@@ -1,7 +1,7 @@
 import { getNextUniqueId } from "../util/common";
 import { WorldMap, Polygon, WallBlock, WorldCell } from "./common";
 
-export function distance(from: Point, to: Point) {
+export function distance(from: Point, to: Point): number {
     const { x: x1, y: y1 } = from;
     const { x: x2, y: y2 } = to;
     const y = x2 - x1;

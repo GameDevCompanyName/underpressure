@@ -82,6 +82,16 @@ export class Game extends Scene {
         if (this.visionGradient) {
             this.visionGradient.destroy();
         }
+
+        this.wallGroup.clear();
+        this.wallInstances.clear();
+        this.addedWallBlocks.clear();
+        this.world.map.length = 0;
+        this.world.optimisedWallBlocks.length = 0;
+        this.world.segments.length = 0;
+        this.world.pathInfo.edges.length = 0;
+        this.world.pathInfo.nodes.length = 0;
+        this.intersections.length = 0;
     }
 
     preload() {
@@ -313,6 +323,8 @@ export class Game extends Scene {
         // 7. Обновляем текущий активный сегмент
         this.currentActiveSegment = newActiveSegment;
         this.setupShadowCasting();
+
+        console.log("intersections: " + this.intersections.length);
     }
 
     // Вспомогательные методы:
@@ -535,7 +547,7 @@ export class Game extends Scene {
             posY + 5, // немного ниже центра игрока
             this.tileSize * this.playerSizeTiles * 1.5,
             10,
-            this.endPlatformColor
+            color
         );
 
         this.physics.add.existing(platform, true);
