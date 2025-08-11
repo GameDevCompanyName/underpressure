@@ -21,6 +21,8 @@ export class Cutscene extends Scene {
 
     preload() {
         this.levelManager = new LevelManager();
+        this.cutsceneInfo = this.levelManager.getCurrentCutsceneInfo()!;
+        this.load.image(this.getCutsceneBgName(), 'assets/bg/' + this.getCutsceneIndex() + '.jpg');
     }
 
     create() {
@@ -30,12 +32,28 @@ export class Cutscene extends Scene {
 
         this.cameras.main.setBackgroundColor(UI_COLOR.BG_DARK);
 
+        this.drawBackgroundImage();
+
         this.drawCurrentSlide();
         fadeFromBlack(this, 500);
     }
 
+    drawBackgroundImage() {
+        const background = this.add.image(WIDTH_PIXELS / 2, HEIGHT_PIXELS / 2, this.getCutsceneBgName());
+        background.setDisplaySize(WIDTH_PIXELS, HEIGHT_PIXELS);
+        background.setScrollFactor(0);
+    }
+
     getCurrentSlide(): Slide {
         return this.cutsceneInfo.cutscenes[this.slideIndex];
+    }
+
+    getCutsceneIndex(): string {
+        return this.cutsceneInfo.index;
+    }
+
+    getCutsceneBgName(): string {
+        return 'cs_bg_' + this.getCutsceneIndex();
     }
 
     nextSlide() {

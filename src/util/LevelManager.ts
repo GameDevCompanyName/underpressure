@@ -14,18 +14,17 @@ export interface LevelInfo {
     width: number;
     height: number;
     difficulty: number;
-    cutscene?: number;
+    cutscene?: string;
     colors: WorldColors;
 }
 
 export interface Slide {
     text: string;
     nextButtonText: string;
-    bgName: string | null;
 }
 
 export interface CutsceneInfo {
-    index: number;
+    index: string;
     cutscenes: Slide[]
 }
 
