@@ -38,8 +38,8 @@ export class LevelManager {
     getCurrentLevel(): string {
         let level = localStorage[CURRENT_STORY_LEVEL_KEY];
         if (!level) {
-            level = "1";
-            this.saveLevel(level);
+            this.initClearSave();
+            level = localStorage[CURRENT_STORY_LEVEL_KEY];
         }
         return level;
     }
@@ -54,7 +54,7 @@ export class LevelManager {
 
     getCurrentLevelInfo(): LevelInfo {
         const currentLevel = this.getCurrentLevel();
-        return LEVELS.find(level => level.level == currentLevel)!;
+        return LEVELS.find(level => level.level === currentLevel)!;
     }
 
     saveNextLevel() {
@@ -70,6 +70,10 @@ export class LevelManager {
             scene.scene.stop(sceneName);
             scene.scene.start(sceneName);
         });
+    }
+
+    initClearSave() {
+        localStorage[CURRENT_STORY_LEVEL_KEY] = LEVELS[0].level;
     }
 
 }

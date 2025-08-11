@@ -98,6 +98,7 @@ export class Game extends Scene {
         this.loseState = false;
         this.isRefueling = false;
         this.isThrusting = false;
+
         this.fuel = this.FUEL_MAX;
 
         this.soundManager.initGameInstances();
@@ -187,9 +188,9 @@ export class Game extends Scene {
 
     private updatePlayerTexture() {
         // if (this.player.body?.velocity.x! < 0) {
-            // this.player.setScale(-this.PLAYER_SCALE, this.PLAYER_SCALE);
+        // this.player.setScale(-this.PLAYER_SCALE, this.PLAYER_SCALE);
         // } else {
-            // this.player.setScale(this.PLAYER_SCALE, this.PLAYER_SCALE);
+        // this.player.setScale(this.PLAYER_SCALE, this.PLAYER_SCALE);
         // }
 
         if (this.isThrusting) {
@@ -517,10 +518,8 @@ export class Game extends Scene {
             if (!this.winState && !this.loseState) {
                 this.winState = true;
                 this.soundManager.stopSoundsAndPlayWin();
-                fadeToBlack(this, 1000, () => {
-                    this.levelManager.saveNextLevel();
-                    this.levelManager.launchCurrentLevelScene(this);
-                });
+                this.levelManager.saveNextLevel();
+                this.levelManager.launchCurrentLevelScene(this);
             }
         });
     }
@@ -650,8 +649,8 @@ export class Game extends Scene {
         this.fuelBarBackground = this.add.rectangle(0, 0, barWidth, barHeight, this.barBGcolor, 0.7);
         this.fuelBarForeground = this.add.rectangle(0, 0, barWidth, barHeight, this.barFillColor, 1.0);
 
-        this.fuelBarBackground.setOrigin(0.5, 0);
-        this.fuelBarForeground.setOrigin(0.5, 0);
+        this.fuelBarBackground.setOrigin(0.5, 0.5);
+        this.fuelBarForeground.setOrigin(0.5, 0.5);
     }
 
     private setupControls(): void {
@@ -706,11 +705,11 @@ export class Game extends Scene {
 
     private updateFuelBar(): void {
         // Вычисляем ширину полосы пропорционально размеру игрока и масштабируем на 1.5
-        const barWidth = this.tileSize * this.playerSizeTiles * 1.5;
+        const barWidth = this.tileSize * 4;
 
         // Координата центра игрока по X — это центр полосы, 
         // а setPosition ставит левый верхний угол, поэтому смещаем влево на половину ширины
-        const barX = this.player.x;
+        const barX = this.player.x + this.tileSize / 2;
 
         // Позиция по Y под игроком — как было, чуть ниже
         const barY = this.player.y + this.tileSize * 4;
@@ -723,6 +722,7 @@ export class Game extends Scene {
 
         // Устанавливаем ширину заливки в зависимости от процента топлива
         this.fuelBarForeground.width = barWidth * fuelRatio;
+        this.fuelBarBackground.width = barWidth;
     }
 
     private updateSpeedText(): void {

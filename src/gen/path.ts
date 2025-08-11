@@ -38,17 +38,26 @@ export function generatePathInfo(map: WorldMap): WorldPathInfo {
 
     //TODO
     let prevNode: PathNode | null = null;
+    let refuelProbability = REFUEL_PLATRORM_BASE_P;
 
     for (let i = 0; i < count; i++) {
         const currentX = Math.floor(WORLD_PADDING + distanceX * i + distanceX / 2);
         const currentY = Math.floor(WORLD_PADDING + innerHeight * Math.random());
-        const type = i === 0 ?
-            PathNodeType.START :
-            i === count - 1 ?
-                PathNodeType.END :
-                Math.random() < REFUEL_PLATRORM_BASE_P
-                    ? PathNodeType.REFUEL
-                    : PathNodeType.EMPTY;
+        
+        let type: PathNodeType;
+        switch (i) {
+            case 0: type = PathNodeType.START;
+            case count - 1: type = PathNodeType.END;
+            default: {
+                if (Math.random() < refuelProbability) {
+                    type = PathNodeType.REFUEL;
+                    refuelProbability = REFUEL_PLATRORM_BASE_P;
+                } else {
+                    type = PathNodeType.EMPTY;
+                    refuelProbability = (1 + refuelProbability) / 2;
+                }
+            }
+        }
 
         const currentNode: PathNode = {
             coords: { x: currentX, y: currentY },
