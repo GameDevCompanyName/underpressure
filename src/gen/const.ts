@@ -2,7 +2,7 @@ export const WORLD_PADDING = 10;
 export const WORLD_SEGMENT_SIZE = 50;
 
 // PATH GENERATION
-export const AVERAGE_NODE_DISTANCE = 40;
+export const AVERAGE_NODE_DISTANCE = 30;
 export const AVERAGE_NODE_DIAMETER = 14;
 export const MIN_EDGE_FREQ = 0.1;
 export const MAX_EDGE_FREQ = 0.3;

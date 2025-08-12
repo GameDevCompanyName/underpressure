@@ -74,7 +74,7 @@ export const LEVELS: LevelInfo[] = [
         name: "deeper",
         bgname: "rocks",
         difficulty: 0.5,
-        width: 120,
+        width: 150,
         height: 800,
         colors: {
             wallColor: 0x4e4345,

@@ -3,6 +3,7 @@ import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { createButton, fadeFromBlack, fadeToBlack, UI_COLOR } from '../../util/ui';
 import { Game } from './Game';
 import { LevelManager } from '../../util/LevelManager';
+import { getSoundManger } from '../../util/SoundManager';
 
 export class MainMenu extends Scene {
 
@@ -13,10 +14,11 @@ export class MainMenu extends Scene {
     }
 
     preload() {
-
+        getSoundManger(this).preloadGameSounds();
     }
 
     create() {
+        getSoundManger(this).initInstances();
         this.levelManager = new LevelManager();
 
         this.cameras.main.setBackgroundColor(UI_COLOR.BG_LIGHT);
@@ -28,10 +30,16 @@ export class MainMenu extends Scene {
         });
 
         fadeFromBlack(this, 1000);
+        getSoundManger(this).playMenu();
     }
 
     transitionToGame() {
         this.levelManager.launchCurrentLevelScene(this);
+        getSoundManger(this).stopMenu();
+    }
+
+    destroy() {
+        getSoundManger(this).stopMenu();
     }
 
 }

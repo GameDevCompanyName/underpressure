@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { generateWorld, WallBlock, World, WorldCell, WorldSegment } from '../../gen/common';
 import { PathNode, PathNodeType } from '../../gen/path';
-import SoundManager from '../../util/SoundManager';
+import SoundManager, { getSoundManger } from '../../util/SoundManager';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { getRandomWorldColors, WorldColors } from '../../util/worldColorGeneration';
 import { fadeFromBlack, fadeToBlack } from '../../util/ui';
@@ -99,8 +99,7 @@ export class Game extends Scene {
         this.levelManager = new LevelManager();
         const levelInfo: LevelInfo = this.levelManager.getCurrentLevelInfo();
 
-        this.soundManager = new SoundManager(this);
-        this.soundManager.preloadGameSounds();
+        this.soundManager = getSoundManger(this);
         this.load.image('gg', 'assets/gg.png');
         this.load.image('gg_fly', 'assets/gg_fly.png');
         if (levelInfo.bgname) {
@@ -117,7 +116,7 @@ export class Game extends Scene {
 
         this.fuel = this.FUEL_MAX;
 
-        this.soundManager.initGameInstances();
+        this.soundManager.initInstances();
         this.soundManager.startCaveAmbience();
         this.soundManager.playMusic();
 
@@ -740,7 +739,7 @@ export class Game extends Scene {
         if (this.cursors.up?.isDown) dirY -= 1;
 
         if (dirX !== 0) body.acceleration.x = dirX * 300;
-        if (dirY !== 0) body.acceleration.y = dirY * 800;
+        if (dirY !== 0) body.acceleration.y = dirY * 400;
 
         const directionCount = Math.abs(dirX) + Math.abs(dirY);
 

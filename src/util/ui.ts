@@ -1,4 +1,5 @@
 import { Scene } from "phaser";
+import { getSoundManger } from "./SoundManager";
 
 export enum UI_COLOR {
     MAIN = 0x134074,
@@ -31,6 +32,8 @@ export function createButton(
     text: string,
     onClick: () => void
 ) {
+    const soundManager = getSoundManger(scene);
+
     const buttonText = scene.add.text(0, 0, text, {
         font: '18px sonic',
         color: numToCssHex(UI_COLOR.SURFACE),
@@ -44,7 +47,10 @@ export function createButton(
     container.setInteractive({ useHandCursor: true })
         .on('pointerover', () => buttonBg.setFillStyle(UI_COLOR.BG_DARK))
         .on('pointerout', () => buttonBg.setFillStyle(UI_COLOR.SECONDARY))
-        .on('pointerdown', onClick);
+        .on('pointerdown', () => {
+            soundManager.playButton();
+            onClick();
+        });
 
     return container;
 }
