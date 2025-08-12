@@ -13,6 +13,7 @@ export interface LevelInfo {
     name: string;
     width: number;
     height: number;
+    bgname?: string;
     difficulty: number;
     cutscene?: string;
     colors: WorldColors;

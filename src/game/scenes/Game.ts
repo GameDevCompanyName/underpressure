@@ -45,6 +45,7 @@ export class Game extends Scene {
     private fuelBarBackground: Phaser.GameObjects.Rectangle;
     private fuelBarForeground: Phaser.GameObjects.Rectangle;
     private visionGradient: Phaser.GameObjects.Image;
+    private bgImage: Phaser.GameObjects.TileSprite;
 
     private readonly FUEL_MAX = 200 + (this.DEBUG ? 2000 : 0);
     private readonly FUEL_CONSUMPTION_BASE = 10;
@@ -95,11 +96,16 @@ export class Game extends Scene {
     }
 
     preload() {
+        this.levelManager = new LevelManager();
+        const levelInfo: LevelInfo = this.levelManager.getCurrentLevelInfo();
+
         this.soundManager = new SoundManager(this);
         this.soundManager.preloadGameSounds();
-        this.levelManager = new LevelManager();
         this.load.image('gg', 'assets/gg.png');
         this.load.image('gg_fly', 'assets/gg_fly.png');
+        if (levelInfo.bgname) {
+            this.load.image(levelInfo.bgname, `assets/levelbg/${levelInfo.bgname}.jpg`);
+        }
     }
 
     create() {
@@ -134,6 +140,9 @@ export class Game extends Scene {
         this.addEndPlatform();
         this.addRefuelPlatformsForIntermediateNodes();
         this.setupCamera();
+        if (this.levelInfo.bgname) {
+            this.setupBgImage();
+        }
         if (!this.DEBUG) {
             this.setupVisionGradient();
         }
@@ -144,6 +153,60 @@ export class Game extends Scene {
         this.setupShadows();
 
         fadeFromBlack(this, 1000);
+    }
+
+    update(time: number, delta: number) {
+        this.handlePlayerMovement(delta);
+        this.updatePlayerTexture();
+        this.handleRefuel(delta);
+        this.handleSegmentLoadUnloading({ x: this.player.x / this.tileSize, y: this.player.y / this.tileSize })
+        this.updateCameraZoom();
+        if (this.bgImage) {
+            this.updateBgImagePosition();
+        }
+
+        if (this.lightRefreshDeltaSum > 30) {
+            this.ray.setOrigin(this.player.x, this.player.y);
+            this.intersections = this.ray.castCircle();
+            this.redrawLight();
+            this.lightRefreshDeltaSum = 0;
+        } else {
+            this.lightRefreshDeltaSum += delta;
+        }
+
+        this.updateFuelBar();
+        if (!this.DEBUG) {
+            this.visionGradient.setPosition(this.player.x, this.player.y);
+        }
+    }
+
+    private setupBgImage() {
+        let bgImageWidth = this.world.width * this.tileSize * 1.2;
+        let bgImageHeight = this.world.height * this.tileSize * 1.2;
+
+        // Добавляем картинку в левый верхний угол мира
+        this.bgImage = this.add.tileSprite(0, 0, bgImageWidth, bgImageHeight, this.levelInfo.bgname!)
+            .setOrigin(0, 0)
+            // .setSize(bgImageWidth, bgImageHeight)
+            .setDisplaySize(bgImageWidth, bgImageHeight)
+            // .setScale(2)
+            .setAlpha(0.1)
+            .setDepth(-1); // На задний план
+
+        // Можно добавить кастомный blendMode, если нужно
+        // this.bgImage.setBlendMode(Phaser.BlendModes.ADD);
+
+    }
+
+    private updateBgImagePosition() {
+        // const progressX = this.player.x / (this.world.width * this.tileSize);
+        // const progressY = this.player.y / (this.world.height * this.tileSize);
+        const movementScale = 10;
+
+        this.bgImage.setPosition(
+            -this.player.x / movementScale,
+            -this.player.y / movementScale
+        );
     }
 
     private setupShadows() {
@@ -171,28 +234,6 @@ export class Game extends Scene {
     private setupShadowCasting() {
         if (!this.DEBUG) {
             this.raycaster.mapGameObjects(this.wallGroup.getChildren());
-        }
-    }
-
-    update(time: number, delta: number) {
-        this.handlePlayerMovement(delta);
-        this.updatePlayerTexture();
-        this.handleRefuel(delta);
-        this.handleSegmentLoadUnloading({ x: this.player.x / this.tileSize, y: this.player.y / this.tileSize })
-        this.updateCameraZoom();
-
-        if (this.lightRefreshDeltaSum > 30) {
-            this.ray.setOrigin(this.player.x, this.player.y);
-            this.intersections = this.ray.castCircle();
-            this.redrawLight();
-            this.lightRefreshDeltaSum = 0;
-        } else {
-            this.lightRefreshDeltaSum += delta;
-        }
-
-        this.updateFuelBar();
-        if (!this.DEBUG) {
-            this.visionGradient.setPosition(this.player.x, this.player.y);
         }
     }
 

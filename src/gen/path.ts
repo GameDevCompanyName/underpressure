@@ -41,15 +41,26 @@ export function generatePathInfo(map: WorldMap): WorldPathInfo {
     let refuelProbability = REFUEL_PLATRORM_BASE_P;
 
     for (let i = 0; i < count; i++) {
-        const currentX = Math.floor(WORLD_PADDING + distanceX * i + distanceX / 2);
-        const currentY = Math.floor(WORLD_PADDING + innerHeight * Math.random());
 
         let type: PathNodeType;
+        let currentY;
+        const currentX = Math.floor(WORLD_PADDING + distanceX * i + distanceX / 2);
+
         switch (i) {
-            case 0: type = PathNodeType.START; break;
-            case count - 1: type = PathNodeType.END; break;
+            case 0: {
+                type = PathNodeType.START;
+                currentY = Math.floor(WORLD_PADDING * 1.5);
+                break;
+            }
+            case count - 1: {
+                type = PathNodeType.END;
+                currentY = Math.floor(WORLD_PADDING + innerHeight);
+                break;
+            }
             default: {
-                let dist = distance({x: currentX, y: currentY}, prevNode!.coords);
+                currentY = Math.floor(WORLD_PADDING + innerHeight * Math.random());
+                let dist = distance({ x: currentX, y: currentY }, prevNode!.coords);
+
                 if (dist > FUEL_DISTANCE / 2) {
                     let closenessToLimit = dist / FUEL_DISTANCE;
                     refuelProbability = (refuelProbability + closenessToLimit) / 2;
