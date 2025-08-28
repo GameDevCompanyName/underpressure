@@ -23,7 +23,7 @@ export class MainMenu extends Scene {
 
         this.cameras.main.setBackgroundColor(UI_COLOR.BG_LIGHT);
 
-        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, 'Start', () => this.transitionToGame());
+        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, this.getStartButtonName(), () => this.transitionToGame());
         createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 10, 'Рекорды', () => { });
         createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 80, 'Стереть сохранение', () => {
             this.levelManager.initClearSave();
@@ -31,6 +31,15 @@ export class MainMenu extends Scene {
 
         fadeFromBlack(this, 1000);
         getSoundManger(this).playMenu();
+    }
+
+    getStartButtonName(): string {
+        const level = this.levelManager.getCurrentLevel();
+        if (level === '1.1_c') {
+            return 'Новая игра';
+        } else {
+            return 'Продолжить ' + level;
+        }
     }
 
     transitionToGame() {

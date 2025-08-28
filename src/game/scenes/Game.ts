@@ -59,7 +59,7 @@ export class Game extends Scene {
 
     private readonly MIN_ZOOM = this.DEBUG ? 0.3 : 0.5;
     private readonly MAX_ZOOM = this.DEBUG ? 0.3 : 0.45;
-    private readonly MAX_SPEED = 600;
+    private readonly MAX_SPEED = 400;
 
     private fuel: number;
 
@@ -739,7 +739,7 @@ export class Game extends Scene {
         if (this.cursors.up?.isDown) dirY -= 1;
 
         if (dirX !== 0) body.acceleration.x = dirX * 300;
-        if (dirY !== 0) body.acceleration.y = dirY * 400;
+        if (dirY !== 0) body.acceleration.y = dirY * 800;
 
         const directionCount = Math.abs(dirX) + Math.abs(dirY);
 

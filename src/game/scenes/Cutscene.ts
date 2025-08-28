@@ -89,6 +89,7 @@ export class Cutscene extends Scene {
             }
 
             if (this.slideIndex == this.cutsceneInfo.cutscenes.length - 1) {
+                this.levelManager.saveNextLevel();
                 this.transitionToGame();
             } else {
                 this.nextSlide();
