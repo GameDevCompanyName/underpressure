@@ -9,10 +9,10 @@ const CURRENT_STORY_LEVEL_KEY = LS_GAME_PREFIX + 'curStoryLevel';
 
 export interface GameStateInfo {
     level: string;
-    nextLevel?: string;
 }
 
 export interface LevelInfo extends GameStateInfo {
+    nextLevel: string;
     name: string;
     width: number;
     height: number;
@@ -21,9 +21,14 @@ export interface LevelInfo extends GameStateInfo {
     colors: WorldColors;
 }
 
+export interface SlideButton {
+    text: string;
+    nextLevel?: string;
+}
+
 export interface Slide {
     text: string;
-    nextButtonText: string;
+    buttons: SlideButton[];
 }
 
 export interface CutsceneInfoSmall extends GameStateInfo {

@@ -3,8 +3,7 @@ import { GameStateInfo } from "../../util/LevelManager";
 export const LEVELS = [
     {
         index: "0",
-        level: "1.1_c",
-        nextLevel: "1.1"
+        level: "1.1_c"
     },
     {
         level: "1.1",
@@ -47,8 +46,7 @@ export const LEVELS = [
     },
     {
         index: "1",
-        level: "2.1_c",
-        nextLevel: "2.1"
+        level: "2.1_c"
     },
     {
         level: "2.1",
@@ -91,8 +89,7 @@ export const LEVELS = [
     },
     {
         index: "2",
-        level: "3_c",
-        nextLevel: "3"
+        level: "3_c"
     },
     {
         level: "3",
@@ -109,8 +106,7 @@ export const LEVELS = [
     },
     {
         index: "3",
-        level: "4_c",
-        nextLevel: "4"
+        level: "4_c"
     },
     {
         level: "4.1",
@@ -140,8 +136,7 @@ export const LEVELS = [
     },
     {
         index: "4",
-        level: "5_c",
-        nextLevel: "5"
+        level: "5_c"
     },
     {
         level: "5",
@@ -158,8 +153,7 @@ export const LEVELS = [
     },
     {
         index: "5",
-        level: "6_c",
-        nextLevel: "6"
+        level: "6_c"
     },
     {
         level: "6",
@@ -176,8 +170,7 @@ export const LEVELS = [
     },
     {
         index: "6",
-        level: "7_c",
-        nextLevel: "7"
+        level: "7_c"
     },
     {
         level: "7",
@@ -194,8 +187,7 @@ export const LEVELS = [
     },
     {
         index: "7",
-        level: "8_c",
-        nextLevel: "8"
+        level: "8_c"
     },
     {
         level: "8",
@@ -212,28 +204,10 @@ export const LEVELS = [
     },
     {
         index: "8",
-        level: "9_c",
-        nextLevel: "9"
+        level: "9_c"
     },
     {
         level: "9",
-        nextLevel: "10_c",
-        name: "hope",
-        difficulty: 1.0,
-        width: 800,
-        height: 350,
-        colors: {
-            wallColor: 0x252323,
-            bgColor: 0x70798c
-        }
-    },
-    {
-        index: "9",
-        level: "10_c",
-        nextLevel: "10"
-    },
-    {
-        level: "10",
         nextLevel: "choice",
         name: "hope",
         difficulty: 1.0,
@@ -245,15 +219,15 @@ export const LEVELS = [
         }
     },
     {
-        index: "choice",
-        level: "choice"
+        level: "choice",
+        index: "choice"
     },
     {
-        index: "ending1",
-        level: "ending1"
+        index: "end1",
+        level: "end1"
     },
     {
-        index: "ending2",
-        level: "ending2"
+        index: "end2",
+        level: "end2"
     },
 ];

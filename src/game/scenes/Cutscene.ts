@@ -2,7 +2,7 @@ import { Scene, GameObjects } from 'phaser';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { createButton, createText, fadeFromBlack, fadeToBlack, UI_COLOR } from '../../util/ui';
 import { Game } from './Game';
-import { CutsceneInfo, LevelManager, Slide } from '../../util/LevelManager';
+import { CutsceneInfo, LevelManager, Slide, SlideButton } from '../../util/LevelManager';
 
 export class Cutscene extends Scene {
     private levelManager: LevelManager;
@@ -11,7 +11,8 @@ export class Cutscene extends Scene {
     private slideIndex: number;
 
     private text: Phaser.GameObjects.Text;
-    private button: Phaser.GameObjects.Container;
+    private firstButton: Phaser.GameObjects.Container;
+    private secondButton: Phaser.GameObjects.Container;
 
     private isTransition: boolean;
 
@@ -59,13 +60,16 @@ export class Cutscene extends Scene {
     nextSlide() {
         this.isTransition = true;
         this.tweens.add({
-            targets: [this.text, this.button],
+            targets: [this.text, this.firstButton, this.secondButton],
             alpha: 0,
             duration: 1000,
             ease: "Linear",
             onComplete: () => {
                 this.text.destroy();
-                this.button.destroy();
+                this.firstButton.destroy();
+                if (this.secondButton) {
+                    this.secondButton.destroy();
+                }
                 this.slideIndex++;
                 this.drawCurrentSlide();
                 this.isTransition = false;
@@ -73,40 +77,55 @@ export class Cutscene extends Scene {
         });
     }
 
-    transitionToGame() {
-        fadeToBlack(this, 1000, () => {
-            this.scene.stop('Game');
-            this.scene.start('Game');
-        })
-    }
-
     drawCurrentSlide() {
         const currentSlide: Slide = this.getCurrentSlide();
         this.text = createText(this, WIDTH_PIXELS / 2, HEIGHT_PIXELS / 2 - 80, currentSlide.text);
-        this.button = createButton(this, WIDTH_PIXELS / 2, HEIGHT_PIXELS - 80, currentSlide.nextButtonText, () => {
-            if (this.isTransition) {
-                return;
-            }
 
-            if (this.slideIndex == this.cutsceneInfo.cutscenes.length - 1) {
-                this.levelManager.saveNextLevel();
-                this.transitionToGame();
-            } else {
-                this.nextSlide();
-            }
-        });
+        const button1 = currentSlide.buttons[0];
+        const button2 = currentSlide.buttons[1];
+
+        if (!button2) {
+            this.firstButton = this.createSlideButton(button1, WIDTH_PIXELS / 2);
+        } else {
+            this.firstButton = this.createSlideButton(button1, (WIDTH_PIXELS / 2) - 100);
+            this.secondButton = this.createSlideButton(button2, (WIDTH_PIXELS / 2) + 100);
+        }
 
         this.text.alpha = 0;
-        this.button.alpha = 0;
+        this.firstButton.alpha = 0;
+        if (this.secondButton) {
+            this.secondButton.alpha = 0;
+        }
 
         this.tweens.add({
-            targets: [this.text, this.button],
+            targets: [this.text, this.firstButton, this.secondButton],
             alpha: 1,
             duration: 1000,
             ease: "Linear",
             // onComplete: () => {
 
             // }
+        });
+    }
+
+    createSlideButton(button: SlideButton, x: number): Phaser.GameObjects.Container {
+        return createButton(this, x, HEIGHT_PIXELS - 80, button.text, () => {
+            if (this.isTransition) {
+                return;
+            }
+
+            if (this.slideIndex == this.cutsceneInfo.cutscenes.length - 1) {
+                if (button.nextLevel) {
+                    this.levelManager.saveLevel(button.nextLevel);
+                    this.levelManager.launchCurrentLevelScene(this);
+                } else {
+                    this.levelManager.initClearSave();
+                    this.scene.stop("MainMenu");
+                    this.scene.start("MainMenu");
+                }
+            } else {
+                this.nextSlide();
+            }
         });
     }
 
