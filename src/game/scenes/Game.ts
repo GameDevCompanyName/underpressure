@@ -116,6 +116,7 @@ export class Game extends Scene {
 
         this.fuel = this.FUEL_MAX;
 
+        this.soundManager.preloadGameSounds();
         this.soundManager.initInstances();
         this.soundManager.startCaveAmbience();
         this.soundManager.playMusic();
@@ -420,7 +421,7 @@ export class Game extends Scene {
     }
 
     private unloadSegment(segment: WorldSegment): void {
-        console.log(`Unloading segment ${segment.id}`);
+        // console.log(`Unloading segment ${segment.id}`);
 
         for (const block of segment.blocks) {
             if (!this.isBlockUsedInOtherSegments(block, segment)) {

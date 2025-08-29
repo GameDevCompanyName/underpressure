@@ -3,6 +3,7 @@ import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
 import { createButton, createText, fadeFromBlack, fadeToBlack, UI_COLOR } from '../../util/ui';
 import { Game } from './Game';
 import { CutsceneInfo, LevelManager, Slide, SlideButton } from '../../util/LevelManager';
+import SoundManager, { getSoundManger } from '../../util/SoundManager';
 
 export class Cutscene extends Scene {
     private levelManager: LevelManager;
@@ -31,12 +32,20 @@ export class Cutscene extends Scene {
         this.cutsceneInfo = this.levelManager.getCurrentCutsceneInfo()!;
         this.isTransition = false;
 
+        getSoundManger(this).preloadGameSounds();
+
         this.cameras.main.setBackgroundColor(UI_COLOR.BG_DARK);
 
         this.drawBackgroundImage();
 
         this.drawCurrentSlide();
         fadeFromBlack(this, 500);
+
+        if (this.cutsceneInfo.index.startsWith("end")) {
+            getSoundManger(this).playHeroic();
+        } else {
+            getSoundManger(this).playCutscene();
+        }
     }
 
     drawBackgroundImage() {
@@ -115,13 +124,18 @@ export class Cutscene extends Scene {
             }
 
             if (this.slideIndex == this.cutsceneInfo.cutscenes.length - 1) {
+                getSoundManger(this).stopCutscene();
+                getSoundManger(this).stopHeroic();
+
                 if (button.nextLevel) {
                     this.levelManager.saveLevel(button.nextLevel);
                     this.levelManager.launchCurrentLevelScene(this);
                 } else {
                     this.levelManager.initClearSave();
-                    this.scene.stop("MainMenu");
-                    this.scene.start("MainMenu");
+                    fadeToBlack(this, 5000, () => {
+                        this.scene.stop("MainMenu");
+                        this.scene.start("MainMenu");
+                    });
                 }
             } else {
                 this.nextSlide();
