@@ -15,6 +15,7 @@ export class MainMenu extends Scene {
 
     preload() {
         getSoundManger(this).preloadGameSounds();
+        this.load.image("menubg", 'assets/bg/end2.jpg');
     }
 
     create() {
@@ -23,14 +24,19 @@ export class MainMenu extends Scene {
 
         this.cameras.main.setBackgroundColor(UI_COLOR.BG_LIGHT);
 
+        this.drawBackgroundImage();
+
         createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, this.getStartButtonName(), () => this.transitionToGame());
-        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 10, 'Рекорды', () => { });
-        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 80, 'Стереть сохранение', () => {
-            this.levelManager.initClearSave();
-        });
+        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 40, 'Статистика', () => { });
 
         fadeFromBlack(this, 1000);
         getSoundManger(this).playMenu();
+    }
+
+    drawBackgroundImage() {
+        const background = this.add.image(WIDTH_PIXELS / 2, HEIGHT_PIXELS / 2, "menubg");
+        background.setDisplaySize(WIDTH_PIXELS, HEIGHT_PIXELS);
+        background.setScrollFactor(0);
     }
 
     getStartButtonName(): string {
