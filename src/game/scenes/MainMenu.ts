@@ -1,6 +1,6 @@
 import { Scene, GameObjects } from 'phaser';
 import { HEIGHT_PIXELS, WIDTH_PIXELS } from '../../util/const';
-import { createButton, fadeFromBlack, fadeToBlack, UI_COLOR } from '../../util/ui';
+import { createButton, createText, fadeFromBlack, fadeToBlack, UI_COLOR } from '../../util/ui';
 import { Game } from './Game';
 import { LevelManager } from '../../util/LevelManager';
 import { getSoundManger } from '../../util/SoundManager';
@@ -26,8 +26,9 @@ export class MainMenu extends Scene {
 
         this.drawBackgroundImage();
 
-        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 - 50, this.getStartButtonName(), () => this.transitionToGame());
-        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 40, 'Статистика', () => { });
+        createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS - 80, this.getStartButtonName(), () => this.transitionToGame());
+        createText(this, WIDTH_PIXELS / 2, 120, "UNDERPRESSURE", 56).setAlpha(0.7);
+        // createButton(this, WIDTH_PIXELS / 4, HEIGHT_PIXELS / 2 + 100, 'Статистика', () => { }); TODO
 
         fadeFromBlack(this, 1000);
         getSoundManger(this).playMenu();

@@ -79,7 +79,7 @@ export function generatePathInfo(map: WorldMap): WorldPathInfo {
         const currentNode: PathNode = {
             coords: { x: currentX, y: currentY },
             type,
-            diameter: AVERAGE_NODE_DIAMETER * (Math.random() + 0.5)
+            diameter: AVERAGE_NODE_DIAMETER * (Math.random() + 0.7)
         }
         nodes.push(currentNode);
 

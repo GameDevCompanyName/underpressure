@@ -49,11 +49,11 @@ export function generateWorld(width: number, height: number, difficulty: number)
         height,
         width
     );
-    map = smoothIterations(map, 4, 15);
+    map = smoothIterations(map, 4, 17);
     const pathInfo = generatePathInfo(map);
     map = clearNodeCells(map, pathInfo);
     map = clearEdgesCells(map, pathInfo);
-    map = smoothIterations(map, 4, 6);
+    map = smoothIterations(map, 4, 5);
     // map = fillFakeWalls(map);
 
     let countWalls = 0;

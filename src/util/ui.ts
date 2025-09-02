@@ -13,10 +13,11 @@ export function createText(
     scene: Phaser.Scene,
     x: number,
     y: number,
-    text: string
+    text: string,
+    fontSize?: number
 ): Phaser.GameObjects.Text {
     return scene.add.text(x, y, text, {
-        fontSize: '20px',
+        fontSize: (fontSize || 20) + 'px',
         fontFamily: 'pixelizer',
         strokeThickness: 2,
         stroke: numToCssHex(UI_COLOR.BG_DARK),
