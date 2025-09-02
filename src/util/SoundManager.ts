@@ -42,20 +42,20 @@ export default class SoundManager {
     }
 
     preloadGameSounds() {
-        this.scene.load.audio(SOUNDS.THRUST, "/assets/sounds/" + SOUNDS.THRUST);
-        this.scene.load.audio(SOUNDS.DEATH, "/assets/sounds/" + SOUNDS.DEATH);
-        this.scene.load.audio(SOUNDS.CAVE, "/assets/sounds/" + SOUNDS.CAVE);
-        this.scene.load.audio(SOUNDS.WIN, "/assets/sounds/" + SOUNDS.WIN);
-        this.scene.load.audio(SOUNDS.KICK, "/assets/sounds/" + SOUNDS.KICK);
-        this.scene.load.audio(SOUNDS.BUTTON, "/assets/sounds/" + SOUNDS.BUTTON);
-        this.scene.load.audio(MUSIC.MENU, "/assets/sounds/music/" + MUSIC.MENU);
-        this.scene.load.audio(MUSIC.HEROIC, "/assets/sounds/music/" + MUSIC.HEROIC);
-        this.scene.load.audio(MUSIC.CUTSCENE, "/assets/sounds/music/" + MUSIC.CUTSCENE);
-        this.scene.load.audio(MUSIC.DRAMATIC, "/assets/sounds/music/" + MUSIC.DRAMATIC);
-        this.scene.load.audio(MUSIC.MELANCHOLY, "/assets/sounds/music/" + MUSIC.MELANCHOLY);
-        this.scene.load.audio(MUSIC.PEACEFUL, "/assets/sounds/music/" + MUSIC.PEACEFUL);
-        this.scene.load.audio(MUSIC.REFLECTION, "/assets/sounds/music/" + MUSIC.REFLECTION);
-        this.scene.load.audio(MUSIC.STARGAZER, "/assets/sounds/music/" + MUSIC.STARGAZER);
+        this.scene.load.audio(SOUNDS.THRUST, "./assets/sounds/" + SOUNDS.THRUST);
+        this.scene.load.audio(SOUNDS.DEATH, "./assets/sounds/" + SOUNDS.DEATH);
+        this.scene.load.audio(SOUNDS.CAVE, "./assets/sounds/" + SOUNDS.CAVE);
+        this.scene.load.audio(SOUNDS.WIN, "./assets/sounds/" + SOUNDS.WIN);
+        this.scene.load.audio(SOUNDS.KICK, "./assets/sounds/" + SOUNDS.KICK);
+        this.scene.load.audio(SOUNDS.BUTTON, "./assets/sounds/" + SOUNDS.BUTTON);
+        this.scene.load.audio(MUSIC.MENU, "./assets/sounds/music/" + MUSIC.MENU);
+        this.scene.load.audio(MUSIC.HEROIC, "./assets/sounds/music/" + MUSIC.HEROIC);
+        this.scene.load.audio(MUSIC.CUTSCENE, "./assets/sounds/music/" + MUSIC.CUTSCENE);
+        this.scene.load.audio(MUSIC.DRAMATIC, "./assets/sounds/music/" + MUSIC.DRAMATIC);
+        this.scene.load.audio(MUSIC.MELANCHOLY, "./assets/sounds/music/" + MUSIC.MELANCHOLY);
+        this.scene.load.audio(MUSIC.PEACEFUL, "./assets/sounds/music/" + MUSIC.PEACEFUL);
+        this.scene.load.audio(MUSIC.REFLECTION, "./assets/sounds/music/" + MUSIC.REFLECTION);
+        this.scene.load.audio(MUSIC.STARGAZER, "./assets/sounds/music/" + MUSIC.STARGAZER);
 
         this.soundtrackValue = this.getRandomSountrack();
     }

@@ -15,7 +15,7 @@ export class MainMenu extends Scene {
 
     preload() {
         getSoundManger(this).preloadGameSounds();
-        this.load.image("menubg", 'assets/bg/end2.jpg');
+        this.load.image("menubg", './assets/bg/end2.jpg');
     }
 
     create() {

@@ -24,7 +24,7 @@ export class Cutscene extends Scene {
     preload() {
         this.levelManager = new LevelManager();
         this.cutsceneInfo = this.levelManager.getCurrentCutsceneInfo()!;
-        this.load.image(this.getCutsceneBgName(), 'assets/bg/' + this.getCutsceneIndex() + '.jpg');
+        this.load.image(this.getCutsceneBgName(), './assets/bg/' + this.getCutsceneIndex() + '.jpg');
     }
 
     create() {

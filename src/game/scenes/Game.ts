@@ -100,10 +100,10 @@ export class Game extends Scene {
         const levelInfo: LevelInfo = this.levelManager.getCurrentLevelInfo();
 
         this.soundManager = getSoundManger(this);
-        this.load.image('gg', 'assets/gg.png');
-        this.load.image('gg_fly', 'assets/gg_fly.png');
+        this.load.image('gg', './assets/gg.png');
+        this.load.image('gg_fly', './assets/gg_fly.png');
         if (levelInfo.bgname) {
-            this.load.image(levelInfo.bgname, `assets/levelbg/${levelInfo.bgname}.jpg`);
+            this.load.image(levelInfo.bgname, `./assets/levelbg/${levelInfo.bgname}.jpg`);
         }
     }
 

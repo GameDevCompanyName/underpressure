@@ -1,6 +1,5 @@
 import StartGame from './game/main';
 
-// const baseUrl = import.meta.env.PROD ? '/underpressure/assets/' : '/assets/'; TODO 
 const baseUrl = './assets/';
 
 const file1 = new FontFace(
